@@ -1,0 +1,7 @@
+_inbox/*
+!_inbox/README.md
+*.env
+*.key
+*.pem
+id_rsa*
+id_ed25519*
