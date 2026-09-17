@@ -2,11 +2,15 @@
 
 Private, portable operational context for the netcup VPS named `leo`.
 
+The repository's final state document is [`VPS_STATE.md`](VPS_STATE.md), currently consolidated as version 3.1 on 2026-09-17. It is intended for approved operators and AI clients that need the documented VPS context.
+
 ## Canonical state
 
 [`VPS_STATE.md`](VPS_STATE.md) is the single source of truth. It is intentionally one Markdown file so it can be supplied to ChatGPT, Claude, Gemini, GitHub Copilot, or another AI client without copying a VPS status conversation each time.
 
 The file contains operational facts and decision rules, but must never contain secrets. Unknown facts remain explicitly marked `UNKNOWN`.
+
+Review the document's classification and remove any infrastructure details that should not be shared before changing the repository's visibility or distributing its contents.
 
 ## Refresh
 
