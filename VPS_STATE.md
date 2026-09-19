@@ -2,310 +2,345 @@
 
 ## Enterprise Operational Single Source of Truth
 
-**Document status:** Consolidated operational baseline
-**Document version:** 3.3
-**Last consolidated:** 2026-09-19
-**Primary evidence cutoff:** 2026-09-19, with Vaultwarden deployment evidence through 2026-09-19
-**Owner:** Leo
-**Provider:** netcup / Cupnet
-**Classification:** Private internal operations document
+**Document status:** Updated reconciliation baseline  
+**Document version:** 3.4-reconciliation  
+**Last updated:** 2026-09-19  
+**Primary evidence cutoff:** 2026-09-19, including live VPS reconciliation, Nextcloud repair verification, Kasm terminal evidence, and Vaultwarden deployment evidence  
+**Owner:** Leo  
+**Provider:** netcup / Cupnet  
+**Classification:** Private internal operations document  
 **Canonical file:** `VPS_STATE.md`
 
-> This is the only canonical VPS context document for AI clients and operators. The local source documents used for this consolidation have been consumed and removed from `_inbox/`. Do not create parallel handoff files. Update this file and its Change Record after every material change.
+> This document consolidates the prior SSOT and the fresh verification evidence supplied during the 2026-09-19 reconciliation session. It is the operational authority for AI clients and operators. Do not create parallel handoff files. Update this file and its Change Record after every material change.
 
 ---
 
-## 0. How AI Systems Must Use This File
+## 0. AI operating contract
 
-### 0.1 Authority and evidence rules
+### 0.1 Evidence labels
 
-Use this file as the current operational context. Facts are classified as follows:
+| Label | Meaning | AI behavior |
+|---|---|---|
+| `CONFIRMED` | Directly observed or successfully tested with dated evidence | May be used as current state, subject to evidence date |
+| `OWNER-CONFIRMED` | Directly asserted by the owner as current but not independently exported or fully tested | Use as owner input; do not invent policy details; schedule independent verification |
+| `RECORDED` | Supported by an authoritative document but not rechecked in the latest session | Use with the stated date; recommend rechecking before risky action |
+| `PENDING` | Required work is known but completion is not demonstrated | Never claim complete |
+| `DEFERRED` | Intentionally postponed by design | Do not implement without a new decision |
+| `HISTORICAL` | Superseded by later evidence | Context only; never use as current state |
+| `UNKNOWN` | No reliable evidence available | Do not infer; request a targeted check |
+| `CONFLICT` | Sources disagree and no live evidence resolves the disagreement | Preserve both claims and require verification |
+| `FAILED` | Evidence shows a control or acceptance requirement is not satisfied | Record remediation and do not claim acceptance |
 
-| Label             | Meaning                                                                                          | AI behavior                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
-| `CONFIRMED`       | Directly observed or successfully tested with dated evidence                                     | May be used as current state, subject to its evidence date                                     |
-| `OWNER-CONFIRMED` | Directly asserted by the owner as current, but not yet independently evidenced in the source set | Use as current owner input; do not invent policy details and schedule independent verification |
-| `RECORDED`        | Supported by a prior authoritative document but not rechecked in the latest session              | Use with the stated date; recommend rechecking before risky action                             |
-| `PENDING`         | Required work is known but completion is not demonstrated                                        | Never claim complete                                                                           |
-| `DEFERRED`        | Intentionally postponed by design                                                                | Do not implement without a new decision                                                        |
-| `HISTORICAL`      | Superseded by later evidence                                                                     | Context only; never use as current state                                                       |
-| `UNKNOWN`         | No reliable evidence available                                                                   | Do not infer; request a targeted check                                                         |
-| `CONFLICT`        | Sources disagree and no live evidence resolves the difference                                    | Preserve both claims and require verification                                                  |
+### 0.2 Authority order
 
-When sources conflict, prefer this order:
+When sources conflict, use this order:
 
 1. Fresh direct live command output from the VPS.
-2. The latest dated verified operational document.
-3. The latest dated consolidated SSOT.
+2. Latest dated verified operational evidence.
+3. Latest dated consolidated SSOT.
 4. Older handoffs and planning documents.
 5. Generic assumptions or vendor defaults are never evidence.
 
-### 0.2 Non-hallucination contract
+### 0.3 Non-hallucination and safety rules
 
-An AI client must:
-
-- Treat `UNKNOWN`, `PENDING`, `DEFERRED`, and `CONFLICT` as unresolved.
-- Never invent a version, port, path, credential, backup result, firewall rule, or service status.
+- Treat `UNKNOWN`, `PENDING`, `DEFERRED`, `CONFLICT`, and `FAILED` as unresolved or unsafe until corrected.
+- Never invent a version, port, path, credential, backup result, firewall rule, or service state.
 - Distinguish `planned`, `configured`, `running`, `healthy`, `publicly tested`, and `recovery-tested`.
 - State the evidence date whenever relying on a recorded fact.
-- Use Docker DNS names, not historical container IP addresses.
-- Never request, reproduce, or store secrets in chat, Markdown, Git, screenshots, logs, or prompts.
+- Use Docker DNS service names, never historical container IP addresses, in persistent configuration.
 - Propose read-only inspection first for unknown state.
-- Provide a rollback path and verification command before any change.
-- Ask for explicit confirmation before destructive, production, authentication, firewall, DNS, backup, certificate, or access-control changes.
-- Never execute `docker compose pull`, database changes, volume deletion, firewall changes, key rotation, or restore operations blindly.
-- Treat every OmniRoute request as provider-bound unless the selected provider and data transfer have been explicitly approved. Keep secrets, credentials, VPN material, and secret-bearing configuration out of AI requests entirely.
+- Provide rollback and verification commands before every change.
+- Require explicit approval before destructive, production, authentication, firewall, DNS, backup, certificate, or access-control changes.
+- Never run blind `docker compose pull`, database changes, volume deletion, firewall changes, key rotation, or restore operations.
+- Treat every OmniRoute request as provider-bound unless the selected provider and data transfer have been explicitly approved.
+- Never send secrets, credentials, VPN material, private keys, secret-bearing configuration, or unapproved private data to AI providers.
+- Never publish or retain Kasm tokens, Cloudflare tokens, Access cookies, Restic credentials, R2 credentials, n8n encryption keys, SMTP credentials, WireGuard private keys, or secret-bearing `.env` files.
 
-### 0.3 Required response format for operational work
+### 0.4 Required response structure for operational work
 
-For any proposed VPS action, an AI client should answer in this order:
+1. Current evidence and date.
+2. Unknowns and conflicts.
+3. Service, security, data, and rollback risk.
+4. Read-only checks.
+5. Smallest reversible change.
+6. Exact verification criteria.
+7. Rollback procedure.
+8. SSOT, Change Record, conflict-register, and task-register update.
 
-1. **Current evidence:** what this document says and its date.
-2. **Unknowns:** what must be checked first.
-3. **Risk:** service impact, security impact, data risk, and rollback risk.
-4. **Read-only checks:** exact commands that do not mutate state.
-5. **Change plan:** smallest reversible change, scoped to one stack.
-6. **Verification:** exact success criteria and commands.
-7. **Rollback:** exact recovery action and prerequisites.
-8. **Record update:** what must be added to the Change Record and task register.
+### 0.5 Single-file verification tracker
 
-### 0.4 Secret boundary
+This section is the only verification tracker. Do not maintain a separate Markdown checklist.
 
-Never include or ask the user to paste:
+Status labels:
+- `LV` = Live-verified
+- `OC` = Owner-confirmed
+- `P` = Pending
 
-- Passwords, API tokens, OAuth tokens, SMTP credentials, provider keys, or client keys.
-- `N8N_ENCRYPTION_KEY`, database passwords, Restic passwords, R2 credentials, or WebSocket bridge secrets.
-- Cloudflare Origin CA private key or certificate/key material.
-- `/etc/wireguard/wg0.conf`, client VPN profiles, SSH private keys, or TOTP recovery codes.
-- Kasm administrator credentials or password-manager contents.
-- Secret-bearing `.env` files, shell history, unredacted `docker inspect`, or environment dumps.
+| Area | Status | Source type | Notes |
+|---|---|---|---|
+| Host identity / hostname | `P` | N/A | Recheck live host baseline |
+| UFW / listener ownership | `P` | N/A | Especially 3389 / 8443 / 4317 / 8125 |
+| Caddy / Cloudflare TLS | `LV` | Live evidence | Public route and TLS path recorded |
+| Nextcloud runtime | `LV` | Live evidence | Repair and status confirmed |
+| Nextcloud backups / restore | `P` | N/A | Restore not proven |
+| n8n runtime | `LV` | Live evidence | Runtime confirmed; dump/restore still pending |
+| n8n encryption key / dump path | `P` | N/A | Recovery not yet proven |
+| Kasm route / admin login | `LV` | Live evidence | Browser route and login confirmed |
+| Kasm port exposure / RDP decision | `P` | N/A | Direct 3389 must be resolved |
+| Kasm backup / restore | `P` | N/A | Not yet proven |
+| OmniRoute runtime | `LV` | Live evidence | Container/runtime confirmed |
+| OmniRoute dashboard / API / WebSocket | `P` | N/A | Acceptance incomplete |
+| WireGuard migration | `P` | N/A | Old peers must not be removed yet |
+| Vaultwarden route / service | `LV` | Live evidence | Startup and route confirmed |
+| Vaultwarden onboarding / 2FA / lockdown | `P` | N/A | Not complete |
+| Backup repository / restore drill | `P` | N/A | Snapshot exists, restore not proven |
+| Cloudflare Zero Trust | `OC` | Owner-confirmed | Policy details and client tests still pending |
 
-The following may still be operationally sensitive and should remain private: public IP, provider identifiers, MAC/machine IDs, internal IPs, VPN peer details, filesystem layout, container names, and logs.
-
----
-
-## 1. Current State Dashboard
-
-**State interpretation:** This dashboard records the latest documented state, not an assertion that the VPS is live-verified at the moment this file is read.
-
-| Area                  | Current documented state                                                                                            | Evidence date | Status            | Next action                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------: | ----------------- | ----------------------------------------------------------- |
-| Host identity         | Debian 13 Trixie, Leo One, authoritative hostname recorded                                                          | 2026-09-09/17 | `RECORDED`        | Re-run host baseline                                        |
-| Compute/storage       | 8 vCPU, 16 GiB RAM, 512 GiB nominal storage; ~450 GiB available at audit                                            |    2026-09-10 | `RECORDED`        | Check free space and memory                                 |
-| Firewall              | UFW deny incoming/default routed deny; 22/80/443 and UDP 51820 documented allowed                                   |    2026-09-17 | `RECORDED`        | Explain 3389/8443/telemetry observations                    |
-| Caddy                 | Running reverse proxy and Cloudflare Origin CA TLS                                                                  | 2026-09-16/17 | `CONFIRMED`       | Validate current Caddyfile                                  |
-| Vaultwarden           | 1.37.3, publicly available at `vault.trisektor.org`; no host port; signup temporarily enabled                     | 2026-09-19    | `CONFIRMED`/`PENDING` | Onboard six family members, test clients, then disable signup |
-| Nextcloud             | Public route and application previously functional; maintenance status became uncertain after failed backup attempt |    2026-09-17 | `PENDING`         | Check `occ status` first                                    |
-| n8n                   | Public route, PostgreSQL backend, internal-only database documented                                                 | 2026-09-09/17 | `RECORDED`        | Verify dump, restore, and encryption-key backup             |
-| Kasm                  | Public route and administrator login tested successfully                                                            |    2026-09-16 | `CONFIRMED`       | Add backup/restore coverage                                 |
-| Ollama                | Removed; no local Ollama service or approved local AI route remains                                               |    2026-09-17 | `CONFIRMED`       | Do not recreate without a new architecture decision          |
-| OmniRoute             | Healthy private gateway on `ai_egress` and `omni_clients`; n8n model execution succeeded; dashboard remains private | 2026-09-17 | `CONFIRMED`/`PENDING` | Preserve routing; diagnose dashboard acceptance             |
-| Open WebUI            | Owner reports OmniRoute-only use; exact final membership and route test require evidence                      | 2026-09-17 | `OWNER-CONFIRMED`/`PENDING` | Verify network, auth, and route test             |
-| VS Code Server        | Deployed privately; route tested; application authentication disabled in prior evidence                             |    2026-09-17 | `PENDING`         | Enable and test authentication                              |
-| Claude CLI            | Reaches gateway but received provider 401                                                                           |    2026-09-17 | `PENDING`         | Resolve provider credentials safely                         |
-| Netdata               | 2.11.0 on loopback 127.0.0.1:19999 via SSH tunnel                                                                   |    2026-09-13 | `RECORDED`        | Add protected alerting design                               |
-| WireGuard             | Standard WireGuard IPv4 full tunnel; replacement profiles staged                                                    | 2026-09-07/17 | `PENDING`         | Complete migration, retire old peers                        |
-| Backups               | R2 repository opened after credential rotation; fresh snapshot includes `/srv/stack`; restore not tested          | 2026-09-19    | `CONFIRMED`/`DEFERRED` | Monitor scheduled run; perform approved restore drill       |
-| Cloudflare Zero Trust | Owner-confirmed protection is enabled for n8n, Nextcloud, and Kasm subdomains                                       |    2026-09-17 | `OWNER-CONFIRMED` | Record application/policy details and test clients/webhooks |
-| Image pinning         | Several floating tags remain, including `latest`                                                                    |    2026-09-17 | `PENDING`         | Pin tested digests one stack at a time                      |
-| Origin hardening      | Not implemented                                                                                                     |    2026-09-17 | `DEFERRED`        | Only after recovery and backup proof                        |
-| SSH hardening         | Not fully reviewed                                                                                                  |    2026-09-17 | `PENDING`         | Review without losing console recovery                      |
+Update rule:
+- Directly checked live: `LV`
+- Confirmed by Leo but not independently rechecked: `OC`
+- Uncertain or unproven: `P`
 
 ---
 
-## 2. Infrastructure Identity and Capacity
+## 1. Executive current position
 
-### 2.1 Provider and hardware
+The VPS is a functioning multi-service Docker platform with Cloudflare/Caddy public routes, private AI services through OmniRoute, WireGuard, Nextcloud, n8n, Kasm, and Vaultwarden.
 
-| Field                         | Value                                             | Status / evidence           |
-| ----------------------------- | ------------------------------------------------- | --------------------------- |
-| Provider                      | netcup / Cupnet                                   | `CONFIRMED`, source records |
-| Product                       | RS 2000 G12, KVM                                  | `CONFIRMED`, 2026-09-04/09  |
-| Location                      | Vienna, Austria                                   | `CONFIRMED`, source records |
-| Server nickname               | Leo One                                           | `CONFIRMED`                 |
-| Provider server ID            | `931750`                                          | `RECORDED`; keep private    |
-| Chassis / virtualization      | vm / kvm                                          | `RECORDED`                  |
-| Hardware vendor/model         | netcup / KVM Server                               | `RECORDED`                  |
-| vCPU                          | 8                                                 | `RECORDED`                  |
-| RAM                           | 16 GiB hardware; approximately 15 GiB visible     | `RECORDED`, 2026-09-10      |
-| Storage                       | 512 GiB nominal; approximately 503 GiB filesystem | `RECORDED`, 2026-09-10      |
-| Storage at audit              | Approximately 33 GiB used / 450 GiB available     | `RECORDED`, 2026-09-10      |
-| Swap                          | 4 GiB enabled; 0 used at audit                    | `RECORDED`, 2026-09-10      |
-| Exportable provider snapshots | One remaining at 2026-09-04 capture               | `HISTORICAL`; recheck       |
+The 2026-09-19 reconciliation resolved several documentation uncertainties:
 
-### 2.2 Host identity
+- Nextcloud maintenance mode, repair, quota, service state, and post-repair database state are confirmed.
+- Kasm runtime health, public route, administrator access, and RDP gateway ownership are confirmed.
+- Listener ownership for TCP `8443`, TCP `3389`, TCP `4317`, UDP/TCP `8125`, and TCP `19999` is confirmed.
+- OmniRoute has no host-published port in the live inventory.
+- The existing R2 fresh snapshot after credential rotation is documented and includes `/srv/stack`.
+- The intended Kasm browser route is `https://desktop.trisektor.org` through Cloudflare Zero Trust and Caddy.
 
-| Field                         | Value                                                                               | Status                                  |
-| ----------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------- |
-| Operating system              | Debian GNU/Linux 13 (Trixie)                                                        | `RECORDED`                              |
-| Kernel                        | `6.12.107+deb13-amd64`                                                              | `RECORDED`                              |
-| Docker Engine                 | `29.8.0`                                                                            | `RECORDED`, 2026-09-13                   |
-| Docker Compose                | `v5.5.1`                                                                            | `RECORDED`, 2026-09-13                   |
-| Authoritative static hostname | `v2202609410969512760`                                                              | `CONFIRMED` by direct checks 2026-09-09 |
-| Authoritative FQDN            | `v2202609410969512760.powersrv.de`                                                  | `CONFIRMED` by direct checks 2026-09-09 |
-| Public IPv4                   | `89.58.63.213`                                                                      | `RECORDED`; keep private                |
-| Public interface              | `eth0`                                                                              | `RECORDED`                              |
-| IPv6 allocation               | `2a0a:4cc0:1:8ea::/64`                                                              | `RECORDED`; recheck                     |
-| Administrator                 | `leo`                                                                               | `CONFIRMED`                             |
-| Privilege model               | `leo` belongs to `docker` and `stack-secrets`; Docker membership is root-equivalent | `CONFIRMED`                             |
+The following remain unresolved or require controlled remediation:
 
-**Resolved hostname conflict:** `v22026090410969512760.powersrv.de` was a transcription error in older source documents. Do not use it.
-
-### 2.3 Required host baseline checks
-
-Run from the VPS and record date, command, and result without collecting secrets:
-
-```bash
-hostnamectl
-hostname -f
-uname -srmo
-cat /etc/os-release
-uptime
-free -h
-df -hT
-swapon --show
-nproc
-```
+- Direct public TCP `3389` is published by Kasm’s RDP gateway and is separate from the Cloudflare-protected browser route.
+- Kasm token-bearing logs were uploaded and must be treated as exposed; affected token material requires rotation.
+- Current all-service backup coverage, repository integrity, and application restore drills are not fully proven.
+- n8n owner account, dump, independent encryption-key recovery, and isolated restore are not fully proven.
+- WireGuard replacement peers have no documented handshakes; old peers must not be removed.
+- OmniRoute application-level dashboard/API/WebSocket acceptance remains incomplete despite container health and n8n model execution.
+- AI network membership and privacy-boundary enforcement require verification.
+- Open WebUI, VS Code Server, and Claude CLI acceptance remains incomplete.
+- Vaultwarden onboarding, 2FA, registration lock-down, and restore remain incomplete.
+- Floating image tags remain in use.
+- SSH hardening, Docker/agent isolation, monitoring alerting, and disaster-recovery drills remain incomplete.
 
 ---
 
-## 3. Network, Public Exposure, and Firewall
+## 2. Current state dashboard
 
-### 3.1 Intended public architecture
+| Area | Current documented state | Evidence date | Status | Next action |
+|---|---|---:|---|---|
+| Host identity | Debian 13 Trixie; hostname `v2202609410969512760`; hardware access warnings were non-fatal | 2026-09-19 | `RECORDED/CONFIRMED` | Recheck full host baseline when convenient |
+| Compute/storage | 8 vCPU, approximately 16 GiB RAM, approximately 503 GiB filesystem; fresh Kasm heartbeat showed approximately 10.3% disk used | 2026-09-19 | `RECORDED/CONFIRMED` | Continue capacity monitoring |
+| UFW | Active; incoming/routed deny; TCP 22/80/443 and UDP 51820 allowed; no explicit 3389 or 8443 rules | 2026-09-19 | `CONFIRMED` | Reconcile Docker-published Kasm ports with intended exposure |
+| Caddy | Running; ports 80/443; Cloudflare Origin CA model; public reverse-proxy routes | 2026-09-19 | `CONFIRMED` | Validate configuration before changes |
+| Nextcloud | Version 34.0.3.2; maintenance off; repair complete; no DB upgrade pending; `leo` quota 180 GB; recent jobs; MariaDB healthy; Redis running | 2026-09-19 | `CONFIRMED` application state | Verify backup/restore and authenticated clients |
+| n8n | Running with PostgreSQL; public route documented; no host ports | 2026-09-19 | `RECORDED/CONFIRMED` container state | Verify owner, dump, key recovery, restore, and webhook behavior |
+| Kasm | Runtime/API/RDP health confirmed; public route and admin login confirmed; `desktop.trisektor.org` is the intended browser route | 2026-09-19 | `CONFIRMED` runtime; `PENDING` recovery/security acceptance | Rotate exposed token material; decide/remediate direct 3389 exposure; verify restore |
+| TCP 8443 | `kasm_proxy` publishes host 8443 to internal Kasm HTTPS 443 | 2026-09-19 | `CONFIRMED` mapping; security acceptance pending | Preserve Caddy upstream and test rollback before changing |
+| TCP 3389 | `kasm_rdp_gateway` publishes host 3389 on IPv4 and IPv6 | 2026-09-19 | `CONFIRMED` ownership; `PENDING` security disposition | Normal access is through Cloudflare/Caddy; test whether host publication can be removed safely |
+| Telemetry 4317/8125/19999 | OTEL and Netdata listeners are loopback-only | 2026-09-19 | `CONFIRMED` loopback mapping | Do not expose; document ownership |
+| Ollama | Removed; no approved local model route | 2026-09-17 | `CONFIRMED` | Do not recreate without architecture decision |
+| OmniRoute | Healthy container; `omni_clients` and `ai_egress`; no host port; n8n model execution previously succeeded | 2026-09-19 | `CONFIRMED` container/routing; `PENDING` app acceptance | Test `/healthz`, dashboard API, WebSocket, and privacy boundary |
+| Open WebUI | Running and healthy; final network/auth/route acceptance not fully evidenced | 2026-09-19 | `PENDING` | Verify final network membership, authentication, and OmniRoute route |
+| VS Code Server | Running privately; image uses floating `latest`; authentication acceptance incomplete | 2026-09-19 | `PENDING` | Enable/test authentication and verify network/mount boundary |
+| Claude CLI | Gateway path recorded; provider authentication previously returned 401 | 2026-09-17 | `PENDING` | Resolve credentials through approved secret mechanism and harmless test |
+| WireGuard | Standard IPv4 full tunnel; ten peers configured; old `.2` and `.6` had recent handshakes; replacements `.7`–`.11` had zero | 2026-09-19 | `PENDING` migration | Migrate one device at a time; verify handshake and exit IP |
+| Backups | R2 repository opened after credential rotation; snapshot `fdbdc472` at 2026-09-19 08:47:28 included `/srv/stack`; full current coverage and restore not proven | 2026-09-19 | `CONFIRMED` fresh snapshot; `PENDING` recovery | Run repository checks, coverage verification, representative restores, and application drills |
+| Cloudflare Zero Trust | Owner confirms protection for n8n, Nextcloud, and Kasm; Nextcloud unauthenticated redirect confirmed | 2026-09-19 | `OWNER-CONFIRMED/CONFIRMED` | Export policy structure and test authorized flows without bypasses |
+| Vaultwarden | Version 1.37.3 healthy; public route, `/alive`, redirect, and R2 inclusion confirmed; signup temporarily enabled | 2026-09-19 | `CONFIRMED/PENDING` | Onboard users, test clients, enable 2FA, disable signup, test restore |
+| Image pinning | Several services use `latest` or rolling tags; local digests observed but Compose immutability not proven | 2026-09-19 | `PENDING` | Pin one stack at a time with rollback digests |
+| SSH/Docker isolation | Docker membership is root-equivalent; SSH and agent boundary not fully reviewed | 2026-09-19 | `PENDING` | Review without losing console/SSH recovery |
+| Monitoring | Netdata loopback access confirmed; alerting design not accepted | 2026-09-19 | `PENDING` | Add protected alerting and review collector warnings |
+| Disaster recovery | Baseline restore history predates later AI/Kasm/Vaultwarden additions | 2026-09-19 | `PENDING` | Complete current-service restore drills; do not claim readiness |
+
+---
+
+## 3. Infrastructure identity and capacity
+
+| Field | Value | Status |
+|---|---|---|
+| Provider | netcup / Cupnet | `CONFIRMED` |
+| Product | RS 2000 G12, KVM | `CONFIRMED` |
+| Location | Vienna, Austria | `CONFIRMED` |
+| Server nickname | Leo One | `CONFIRMED` |
+| Provider server ID | `931750` | `RECORDED — private` |
+| vCPU | 8 | `RECORDED` |
+| RAM | Approximately 16 GiB hardware; approximately 15 GiB visible | `RECORDED` |
+| Storage | Approximately 503 GiB filesystem | `RECORDED` |
+| Authoritative hostname | `v2202609410969512760` | `CONFIRMED` |
+| Authoritative FQDN | `v2202609410969512760.powersrv.de` | `CONFIRMED` |
+| Public IPv4 | `89.58.63.213` | `RECORDED — private` |
+| Interface | `eth0` | `RECORDED` |
+| Administrator | `leo` | `CONFIRMED` |
+| Privilege model | `leo` belongs to `docker` and `stack-secrets`; Docker membership is root-equivalent | `CONFIRMED` |
+| OS | Debian GNU/Linux 13 Trixie | `RECORDED` |
+| Docker Engine | 29.8.0 in prior record; live version should be rechecked | `RECORDED` |
+| Docker Compose | v5.5.1 in prior record | `RECORDED` |
+
+Do not paste or record private provider identifiers, secret-bearing configuration, or unrestricted environment output.
+
+---
+
+## 4. Network, firewall, and public exposure
+
+### 4.1 Intended public architecture
 
 ```text
 Internet
   -> Cloudflare DNS/proxy and Full (strict) TLS
-  -> Caddy on VPS ports 80/443 and UDP 443
+  -> Caddy on host TCP 80/443 and container UDP 443 capability
       -> cloud.trisektor.org  -> Nextcloud
       -> n8n.trisektor.org    -> n8n
-      -> desktop.trisektor.org -> Kasm through host.docker.internal:8443
+      -> desktop.trisektor.org -> https://host.docker.internal:8443 -> Kasm
+      -> vault.trisektor.org  -> Vaultwarden
 
-WireGuard wg0 -> IPv4 full-tunnel VPN through UDP 51820
+WireGuard wg0 -> IPv4 full tunnel through UDP 51820
 
-Private AI networks:
+Private AI:
+  omni_clients -> OmniRoute gateway
   ai_egress    -> OmniRoute and Redis provider-egress path
-  omni_clients -> OmniRoute gateway and controlled AI clients/experiments
-  dev_internal -> VS Code Server
 ```
 
-### 3.2 Docker network inventory
+### 4.2 UFW evidence
 
-| Network                              | Purpose                                            | State                                              |
-| ------------------------------------ | -------------------------------------------------- | -------------------------------------------------- |
-| `proxy`                              | Caddy and public application reverse-proxy traffic | `ACTIVE / RECORDED`                                |
-| `nextcloud_nextcloud_internal`       | Nextcloud, cron, MariaDB, Redis                    | `ACTIVE / RECORDED`                                |
-| `n8n_internal` or `n8n_n8n_internal` | n8n and PostgreSQL                                 | `ACTIVE / RECORDED`; exact name recheck            |
-| `ai_egress`                          | OmniRoute provider-egress network; OmniRoute and its Redis service use it | `CONFIRMED`, 2026-09-17 |
-| `omni_clients`                       | Internal client-to-OmniRoute bridge; OmniRoute and n8n are members       | `CONFIRMED`, 2026-09-17 |
-| `dev_internal`                       | VS Code Server private development network         | `RECORDED`                                         |
-| `ai_backend`                         | Earlier internal-only AI network without egress    | `HISTORICAL`; do not recreate without design       |
-| `ai_clients`                         | Name observed on an earlier Open WebUI inspection; not the implemented shared gateway network | `HISTORICAL`; do not use as the canonical name |
-| `n8n_ai`                             | Proposed n8n-to-Ollama isolation                   | `HISTORICAL`; obsolete after Ollama removal       |
-
-Rules:
-
-- Use Docker DNS service names, never persistent configuration with container IPs.
-- Do not attach PostgreSQL, MariaDB, Nextcloud Redis, or Caddy to AI networks.
-- Do not attach OmniRoute to `proxy` or publish port 20128 to the host.
-- Do not publish AI services through Caddy, Cloudflare, UFW, or public DNS in the current phase.
-- Keep approved client containers on `omni_clients`; do not attach databases or unrelated services.
-- Use Docker DNS `omniroute:20128`, not point-in-time container IPs, for client configuration.
-
-### 3.3 Firewall and listener discrepancy
-
-Documented UFW policy:
+Live UFW evidence at approximately `2026-09-19 15:28:13 UTC`:
 
 ```text
-Default incoming: deny
-Default outgoing: allow
-Default routed: deny
-Allowed inbound: TCP 22, TCP 80, TCP 443, UDP 443 (QUIC status requires recheck), UDP 51820
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+Allowed TCP: 22, 80, 443
+Allowed UDP: 51820
+IPv6 equivalents: 22, 80, 443 TCP and 51820 UDP
 ```
 
-Kasm is the documented owner of TCP 8443, but its bind address, direct exposure, and UFW treatment remain unverified. A 2026-09-17 observation also reported TCP 3389 and telemetry ports 4317/8125. These are security-relevant `CONFLICT` items, not harmless details. UDP 443 is documented as a Caddy capability but is missing from the older UFW evidence; verify whether QUIC is intentionally allowed or intentionally blocked.
+No explicit UFW rules exist for TCP 3389 or TCP 8443. This does not alone establish that Docker-published ports are unreachable. Docker port publishing and host firewall/NAT behavior must be considered together.
 
-Required resolution:
+### 4.3 Live listener mapping
 
-```bash
-sudo ufw status verbose
-sudo ss -lntup
-sudo docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'
-sudo docker ps --format '{{.Names}} {{.Ports}}' | grep -E '3389|8443|4317|8125' || true
-sudo docker inspect $(sudo docker ps -q) --format '{{.Name}} {{json .HostConfig.PortBindings}}' 2>/dev/null
-sudo ss -lunp | grep ':443' || true
+Live `ss` and Docker inspection at approximately `2026-09-19 15:28:13 UTC` mapped the listeners as follows:
+
+| Listener | Owner | Binding | Status |
+|---|---|---|---|
+| TCP 22 | sshd | `0.0.0.0` and IPv6 | Intended SSH |
+| TCP 80 | Docker proxy / Caddy | `0.0.0.0` and IPv6 | Intended HTTP |
+| TCP 443 | Docker proxy / Caddy | `0.0.0.0` and IPv6 | Intended HTTPS |
+| UDP 443 | Caddy container capability | Container exposes UDP 443; UFW rule absent | QUIC policy requires deliberate verification |
+| UDP 51820 | WireGuard | `0.0.0.0` and IPv6 | Intended VPN |
+| TCP 8443 | Docker proxy / `kasm_proxy` | `0.0.0.0` and IPv6 | Kasm HTTPS host endpoint |
+| TCP 3389 | Docker proxy / `kasm_rdp_gateway` | `0.0.0.0` and IPv6 | Direct Kasm RDP gateway exposure |
+| TCP 4317 | `otel-plugin` | `127.0.0.1` | Loopback-only telemetry |
+| TCP/UDP 8125 | Netdata | Loopback only | Loopback-only telemetry |
+| TCP 19999 | Netdata | `127.0.0.1` | Loopback-only dashboard |
+
+### 4.4 Kasm access architecture
+
+The owner confirms Kasm is mapped to `desktop.trisektor.org` and protected with Cloudflare Zero Trust. The documented and intended user path is:
+
+```text
+Browser
+  -> https://desktop.trisektor.org
+  -> Cloudflare proxy and Zero Trust
+  -> Caddy TCP 443
+  -> https://host.docker.internal:8443
+  -> kasm_proxy
+  -> Kasm services
 ```
 
-Do not close or expose these ports until each listener is mapped to an intended service and a recovery path is confirmed. RDP 3389 is especially high priority if not explicitly required. Docker-published ports can bypass assumptions based only on UFW rules, so verify both Docker bindings and host firewall behavior.
+The current direct TCP 3389 publication is a separate path:
+
+```text
+Internet / host TCP 3389
+  -> kasm_rdp_gateway
+```
+
+Cloudflare Zero Trust protecting `desktop.trisektor.org` does not automatically protect a direct IP-based TCP 3389 endpoint. The documented browser architecture does not require users to connect directly to port 3389.
+
+Current status:
+
+```text
+TCP 3389 ownership: CONFIRMED — Kasm RDP gateway
+TCP 3389 normal browser requirement: NOT DEMONSTRATED
+TCP 3389 public exposure acceptance: PENDING controlled decision
+```
+
+Do not remove the mapping blindly. If removal is approved, preserve the Compose rollback copy, remove only the host-side `3389:3389` publication, leave the internal RDP port intact, recreate only the affected service, and test Kasm browser login, session creation, WebSocket behavior, and listener closure.
+
+### 4.5 Security rules
+
+- Keep Kasm upstream as `https://host.docker.internal:8443`, not localhost.
+- Keep Caddy `tls_insecure_skip_verify` limited to the private Caddy-to-Kasm hop.
+- Do not expose private dashboards as a shortcut.
+- Do not close or expose ports without mapping service ownership and recovery.
+- Treat direct Docker-published ports as exposure candidates even if UFW does not list an allow rule.
+- Do not alter Cloudflare TLS from Full (strict) to Flexible.
+- Do not gray-cloud Origin CA hostnames.
 
 ---
 
-## 4. Cloudflare and Caddy
+## 5. Docker networks
 
-### 4.1 Cloudflare state
+Live network inventory showed:
 
-| Setting                      | Documented state                                                    | Status                                        |
-| ---------------------------- | ------------------------------------------------------------------- | --------------------------------------------- |
-| Public application hostnames | `cloud.trisektor.org`, `n8n.trisektor.org`, `desktop.trisektor.org` | `CONFIRMED` by service evidence               |
-| A records                    | Application hostnames point to the VPS IPv4 and are proxied         | `RECORDED`; live DNS recheck                  |
-| SSL/TLS                      | Full (strict)                                                       | `CONFIRMED / RECORDED`                        |
-| Always Use HTTPS             | Enabled                                                             | `RECORDED`                                    |
-| HSTS                         | `max-age=15552000`, no includeSubDomains/preload                    | `RECORDED`                                    |
-| Origin certificate           | Cloudflare Origin CA for `trisektor.org` and wildcard               | `RECORDED`                                    |
-| Origin certificate validity  | 2026-09-05 through 2041-09-01                                       | `RECORDED`; do not treat as renewal guarantee |
+| Network | Subnet | Type/status | Intended role |
+|---|---|---|---|
+| `proxy` | `172.18.0.0/16` | Bridge | Caddy/public proxy |
+| `nextcloud_nextcloud_internal` | `172.19.0.0/16` | Internal bridge | Nextcloud, MariaDB, Redis, cron |
+| `n8n_n8n_internal` | `172.20.0.0/16` | Bridge | n8n and PostgreSQL |
+| `ai_clients` | `172.21.0.0/16` | External bridge; historical | Legacy/old AI network; membership requires verification |
+| `ai_egress` | `172.22.0.0/16` | External bridge | OmniRoute provider egress and Redis |
+| `dev_internal` | `172.23.0.0/16` | External bridge | VS Code private development network |
+| `kasm_default_network` | `172.24.0.0/16` | Bridge | Kasm services |
+| `kasm_sidecar_network` | `172.25.0.0/16` | Kasm sidecar network | Kasm sidecars |
+| `omni_clients` | `172.26.0.0/16` | `Internal true` | Approved client-to-OmniRoute bridge |
+| `host` | Host | Host mode | Docker standard network |
+| `bridge` | `172.17.0.0/16` | Default bridge | Docker standard network |
 
-### 4.2 Cloudflare Zero Trust access layer
+The existence of `ai_clients` is confirmed, but existence alone does not prove that an active service is incorrectly attached. Run a redacted membership check before detaching or deleting anything:
 
-**Current state:** Cloudflare Zero Trust is already implemented, according to the owner, for all three public service subdomains:
+```bash
+for network in ai_clients ai_egress omni_clients dev_internal proxy; do
+  printf '\n=== %s ===\n' "$network"
+  docker network inspect "$network" \
+    --format '{{range $id, $c := .Containers}}{{println $c.Name}}{{end}}' \
+    2>/dev/null || true
+done
+```
 
-| Service         | Protected hostname      | Current state                 | Evidence                   |
-| --------------- | ----------------------- | ----------------------------- | -------------------------- |
-| n8n             | `n8n.trisektor.org`     | Zero Trust protection enabled | Owner-confirmed 2026-09-17 |
-| Nextcloud       | `cloud.trisektor.org`   | Zero Trust protection enabled | Owner-confirmed 2026-09-17 |
-| Kasm Workspaces | `desktop.trisektor.org` | Zero Trust protection enabled | Owner-confirmed 2026-09-17 |
+Policy:
 
-This owner confirmation supersedes older source documents that described Cloudflare Access/Zero Trust as deferred or not yet configured. It does not, by itself, prove the exact policy, identity-provider, group, session, bypass, device-posture, service-token, webhook, or non-browser-client settings.
+- OmniRoute should use `omni_clients` and `ai_egress`.
+- Redis provider-egress should use `ai_egress` only.
+- Approved AI clients should use `omni_clients` deliberately.
+- Databases, Caddy, and unrelated services must not join AI networks.
+- No AI service should have a host-published public port.
+- Use `omniroute:20128`, not historical container IP addresses.
 
-Required documentation and acceptance checks:
+---
 
-- Cloudflare Zero Trust application names and hostnames.
-- Policy order, decision, identity provider, groups, service tokens, and emergency bypass rules, without recording secret values.
-- Session duration, MFA/device posture requirements, and break-glass recovery path.
-- n8n webhook behavior and any intentional public webhook bypass.
-- Nextcloud desktop/mobile/WebDAV/CalDAV/CardDAV compatibility through the access layer.
-- Kasm browser login and websocket/session behavior through the access layer.
-- Audit-log retention and alerting for denied or unusual access.
+## 6. Caddy and Cloudflare
 
-Do not remove, weaken, bypass, or reorder these policies without explicit approval and a tested recovery path. Do not assume that a public HTTP 200 proves Zero Trust enforcement; test an unauthenticated request and an authorized browser flow separately, without exposing credentials.
+### 6.1 Caddy
 
-Non-negotiable rules:
+| Item | Value | Status |
+|---|---|---|
+| Directory | `/srv/stack/caddy/` | `RECORDED` |
+| Compose | `/srv/stack/caddy/compose.yml` | `RECORDED` |
+| Caddyfile | `/srv/stack/caddy/Caddyfile` | `RECORDED` |
+| Container | `caddy` | `CONFIRMED` |
+| Host ports | TCP 80/443 | `CONFIRMED` |
+| UDP 443 | Container capability; UFW policy needs deliberate decision | `PENDING` |
+| Admin | TCP 2019 internal | `RECORDED` |
+| TLS | Explicit Cloudflare Origin CA; `auto_https off` | `CONFIRMED` |
 
-- Never gray-cloud these hostnames while using the Origin CA certificate model.
-- Never change Cloudflare TLS from Full (strict) to Flexible.
-- Do not bypass Zero Trust for n8n except for a documented, narrowly scoped webhook requirement.
-- Do not assume Nextcloud clients work through Zero Trust until desktop/mobile/WebDAV/CalDAV/CardDAV tests are recorded.
-
-### 4.3 Caddy
-
-| Item            | Value                                            | Status                 |
-| --------------- | ------------------------------------------------ | ---------------------- |
-| Stack directory | `/srv/stack/caddy/`                              | `RECORDED`             |
-| Compose file    | `/srv/stack/caddy/compose.yml`                   | `RECORDED`             |
-| Caddyfile       | `/srv/stack/caddy/Caddyfile`                     | `RECORDED`             |
-| Container       | `caddy`                                          | `CONFIRMED / RECORDED` |
-| Public ports    | Host TCP 80/443 and UDP 443                      | `CONFIRMED`            |
-| Internal admin  | 2019/tcp                                         | `RECORDED`             |
-| TLS mode        | `auto_https off`; explicit Origin CA certificate | `CONFIRMED`            |
-
-Public routes:
-
-- `cloud.trisektor.org` -> `nextcloud:80`
-- `n8n.trisektor.org` -> `n8n:5678`
-- `desktop.trisektor.org` -> `https://host.docker.internal:8443`
-
-The Kasm upstream must remain `https://host.docker.internal:8443`, not `localhost:8443`. Caddy's `tls_insecure_skip_verify` is limited to this private Caddy-to-Kasm hop because Kasm's internal endpoint uses a self-signed certificate. Public TLS remains Cloudflare/Caddy protected.
-
-Safe Caddy procedure:
+Required change procedure:
 
 ```bash
 docker exec caddy caddy validate \
@@ -316,898 +351,625 @@ docker exec caddy caddy validate \
 docker exec caddy caddy reload \
   --config /etc/caddy/Caddyfile \
   --adapter caddyfile
-
-docker logs --tail=100 caddy
 ```
 
-Never reload a configuration that failed validation.
+### 6.2 Cloudflare Zero Trust
+
+Owner-confirmed protected hostnames:
+
+- `n8n.trisektor.org`.
+- `cloud.trisektor.org`.
+- `desktop.trisektor.org`.
+
+Live Nextcloud testing at approximately `2026-09-19 15:21:06 UTC` returned HTTP 302 to the Cloudflare Access login endpoint for both `/` and `/status.php`. This confirms unauthenticated protection for the Nextcloud route.
+
+The exact policy export remains undocumented. Record only non-secret policy structure:
+
+- Application name and hostname.
+- Policy order.
+- Action: Allow, Block, Bypass, or Service Auth.
+- Identity provider, group/domain selectors, and device/MFA requirements.
+- Session duration and break-glass recovery path.
+- Intended webhook exceptions, if any.
+- Audit-log retention and alerting.
+
+Do not record service tokens, cookies, private keys, or credentials. Do not bypass or weaken policy to obtain a simple HTTP 200.
 
 ---
 
-## 5. Public and Private Service Inventory
+## 7. Nextcloud
 
-### 5.1 Public routes
+### 7.1 Confirmed application state
 
-| Service   | URL                             | Upstream                            | State                                                    | Last evidence                  |
-| --------- | ------------------------------- | ----------------------------------- | -------------------------------------------------------- | -----------------------------: |
-| Nextcloud | `https://cloud.trisektor.org`   | Nextcloud Apache                    | Previously functional; current maintenance state unknown | 2026-09-09 / 2026-09-17 review |
-| n8n       | `https://n8n.trisektor.org`     | `n8n:5678`                          | Route tested; backup/recovery incomplete                 |                     2026-09-09 |
-| Kasm      | `https://desktop.trisektor.org` | `https://host.docker.internal:8443` | Public route and admin login tested                      |                     2026-09-16 |
+Fresh live evidence captured at `2026-09-19 15:18:27 UTC`:
 
-### 5.2 Private services
+```text
+installed: true
+version: 34.0.3.2
+versionstring: 34.0.3
+maintenance: false
+needsDbUpgrade: false
+productname: Nextcloud
+extendedSupport: false
+```
 
-| Service         | Container/service       | Internal endpoint             | State                                      |
-| --------------- | ----------------------- | ----------------------------- | ------------------------------------------ |
-| OmniRoute       | `omniroute-omniroute-1` | `http://omniroute:20128`      | Healthy gateway; n8n execution confirmed; dashboard issue pending |
-| OmniRoute Redis | `omniroute-redis-1`     | Docker-internal Redis         | Healthy in latest evidence                 |
-| Open WebUI      | `open-webui`            | Internal port 8080            | Deployed; first-run setup pending          |
-| VS Code Server  | `vscode-server`         | Internal port 8443            | Deployed; authentication hardening pending |
-| Netdata         | Host service            | `127.0.0.1:19999`             | Private SSH-tunnel access                  |
-| WireGuard       | Host `wg0`              | UDP 51820                     | IPv4 full tunnel; migration pending        |
+The status was repeated after repair at approximately `15:23 UTC` with the same result.
 
-### 5.3 Database and application isolation
+### 7.2 Repair
 
-- MariaDB and Redis are private to Nextcloud's internal network.
-- PostgreSQL is private to n8n's internal network and must never join `proxy`.
-- n8n and PostgreSQL have no host-published ports.
-- AI services must not receive Docker socket, `stack-secrets` group, unrestricted sudo, WireGuard configuration, or Caddy private-key access.
+The following completed successfully at approximately `2026-09-19 15:22 UTC`:
+
+```bash
+docker exec -u www-data nextcloud php occ maintenance:repair \
+  --include-expensive
+```
+
+The output completed without a reported error and included collation checks, OAuth schema migration, cache clearing, DAV/share repair, calendar updates, MIME/tag repair, background-job registration, token cleanup, metadata initialization, workflow structure population, and other maintenance steps.
+
+Post-repair status confirmed:
+
+```text
+maintenance: false
+needsDbUpgrade: false
+```
+
+Status: `CONFIRMED`.
+
+### 7.3 Quota and user
+
+Fresh `occ user:info leo` output:
+
+```text
+user_id: leo
+enabled: true
+groups:
+  - admin
+quota: 180 GB
+free: 193208594070
+used: 64934250
+total: 193273528320
+relative: 0.03
+```
+
+Status: `CONFIRMED`.
+
+### 7.4 Background jobs
+
+Recent background jobs were observed through `2026-09-19T15:15:00+00:00`, including file scanning, cleanup, DAV, activity notification, calendar, token, log rotation, Text, Webhook, and other jobs.
+
+Status: `CONFIRMED — recent execution observed`.
+
+### 7.5 Supporting services
+
+Live Docker state at approximately `2026-09-19 15:21 UTC`:
+
+- `nextcloud`: up 3 days.
+- `nextcloud-cron`: up 3 days.
+- `nextcloud-db`: MariaDB 11.8, healthy.
+- `redis-nextcloud`: up 3 days.
+
+Status: `CONFIRMED — container/service level`.
+
+### 7.6 Nextcloud backup and client acceptance
+
+Still pending:
+
+- Fresh local/R2 snapshot listing.
+- Repository checks.
+- Current path coverage.
+- Representative restore.
+- Isolated application restore.
+- Authenticated browser/client tests through Cloudflare Access.
+- WebDAV, CalDAV, CardDAV, desktop, and mobile tests where used.
+
+Do not claim Nextcloud disaster recovery readiness from application health or repair output.
 
 ---
 
-## 6. Nextcloud
+## 8. n8n and PostgreSQL
 
-### 6.1 Deployment state
+### 8.1 Current live state
 
-| Item                | Value                                             | Status                                             |
-| ------------------- | ------------------------------------------------- | -------------------------------------------------- |
-| URL                 | `https://cloud.trisektor.org`                     | `CONFIRMED` historical functional test             |
-| Project             | `/srv/stack/nextcloud/`                           | `RECORDED`                                         |
-| Compose             | `/srv/stack/nextcloud/compose.yml`                | `RECORDED`                                         |
-| Application         | `nextcloud:apache`                                | `RECORDED`                                         |
-| Database            | `mariadb:11.8`, verified 11.8.9 in prior evidence | `RECORDED`                                         |
-| Cache/locking       | `redis:7-alpine`                                  | `RECORDED`                                         |
-| Background jobs     | Container cron sidecar                            | `RECORDED`; execution recheck                      |
-| Application version | 34.0.3 / 34.0.3.2 across records                  | `CONFLICT` minor patch; live `occ status` required |
-| Public ports        | None on application/database/cache                | `RECORDED`                                         |
+Live inventory at approximately `2026-09-19 15:28:13 UTC`:
 
-Known configuration:
-
-- `trusted_proxies[0] = 172.18.0.0/16`
-- `overwritehost = cloud.trisektor.org`
-- `overwriteprotocol = https`
-- `overwrite.cli.url = https://cloud.trisektor.org`
-- APCu local cache and Redis transactional locking
-- MariaDB `utf8mb4` enabled
-- Background jobs set to cron
-
-Historical correction: the initial mutable `mariadb:lts` deployment resolved to incompatible MariaDB 12.3.3. It was replaced while fresh with pinned MariaDB 11.8. Do not use `mariadb:lts` or attempt an in-place downgrade.
-
-### 6.2 Verified prior tests
-
-- Browser login/dashboard loaded.
-- Cloudflare Full (strict) path worked.
-- HTTP redirected to HTTPS.
-- HSTS was present.
-- CalDAV and CardDAV `.well-known` routes redirected to `/remote.php/dav/`.
-
-### 6.3 Incident and current uncertainty
-
-A 2026-09-12 backup script entered or attempted maintenance mode and stopped without reliable dump/archive/manifest evidence. Later documents disagreed about whether maintenance, repair, quota, and backup work completed. The latest safe state is therefore:
-
-- Current maintenance mode: `UNKNOWN`.
-- Current application health: `PENDING` live check.
-- Current backup artifact validity: `UNKNOWN`.
-- Do not run repair, quota, SMTP, or 2FA changes until `occ status` is captured.
-
-### 6.4 Conflicting completion claims
-
-| Claim                                           | Earlier source claim                                              | Later controlling evidence                                         | Safe current state                                                                    |
-| ----------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Maintenance window, repair, and quota completed | Older 2026-09-09/13 SSOT revisions                                | 2026-09-12 backup incident and later uncertainty                   | `CONFLICT`; verify with `occ config:system:get`, repair evidence, and quota read-back |
-| Nextcloud backup completed                      | Older handoffs describe backup milestones                         | Failed/incomplete 2026-09-12 script with no trusted artifact chain | `CONFLICT`; require valid dump/archive/manifest and restore evidence                  |
-| SMTP usable                                     | Brevo setup recorded; port 2525 succeeded while 587/465 timed out | Account-activation response remained unresolved                    | `PENDING`; delivery test required                                                     |
-
-### 6.5 SMTP configuration evidence
-
-Non-secret operational facts from the source records:
-
-- Provider: Brevo SMTP.
-- Usable documented port: `2525`.
-- Ports `587` and `465` timed out in the recorded testing.
-- IP authorization changed the observed error from `525` to `502 5.7.0` account-activation failure.
-- A browser save/type-mismatch issue was reported in the Nextcloud SMTP settings flow; use a supported `occ` configuration path if the UI cannot persist values.
-
-Acceptance requires a delivered test message, password-reset test, and a read-back of non-secret SMTP settings. Never record SMTP credentials.
-
-Immediate check:
-
-```bash
-docker exec -u www-data nextcloud php occ status
+```text
+n8n-n8n-1       n8nio/n8n:latest     Up 2 days
+n8n-postgres-1  postgres:16-alpine   Up 3 days (healthy)
 ```
 
-Only if output confirms maintenance mode is enabled:
+n8n and PostgreSQL have no host-published ports.
+
+### 8.2 Unresolved claims
+
+| Claim | Status | Required evidence |
+|---|---|---|
+| n8n owner account exists | `CONFLICT/PENDING` | Current account check without exposing credentials |
+| n8n PostgreSQL dump exists | `PENDING` | Fresh dump listing and non-empty file check |
+| Dump is valid | `PENDING` | `pg_restore --list` succeeds |
+| Encryption-key recovery is complete | `PENDING` | Independent password-manager copy verified out-of-band |
+| Backup includes current n8n data | `PENDING` | Snapshot coverage and restore evidence |
+| n8n isolated restore works | `PENDING` | Non-production restore with matching encryption key |
+| n8n owner/workflow acceptance | `PENDING` | Harmless workflow and controlled webhook tests |
+| Image immutable | `PENDING` | Replace `latest` with tested digest and rollback record |
+
+Safe dump validation:
 
 ```bash
-docker exec -u www-data nextcloud php occ maintenance:mode --off
-docker exec -u www-data nextcloud php occ status
-```
+latest_dump=$(sudo find /srv/stack/backups/n8n-postgres -maxdepth 1 \
+  -type f -name 'n8n-*.dump' -printf '%T@ %p\n' \
+  | sort -n | tail -1 | cut -d' ' -f2-)
 
-### 6.6 Pending Nextcloud work
+test -n "$latest_dump"
+test -s "$latest_dump"
 
-1. Check and resolve maintenance mode.
-2. Confirm cron sidecar runs and Overview reports recent jobs.
-3. Complete Brevo activation and deliver a test email.
-4. Test password reset email.
-5. Enable TOTP only after the factor and recovery codes are saved securely.
-6. Set maintenance window to 02:00 UTC.
-7. Run `maintenance:repair --include-expensive` in a quiet window.
-8. Apply and read back the intended 180 GB quota for `leo`.
-9. Test browser, desktop, mobile, WebDAV, CalDAV, and CardDAV workflows.
-10. Reconfirm database/cache health and current patch versions.
-
----
-
-## 7. n8n and PostgreSQL
-
-### 7.1 Current documented state
-
-| Item              | Value                                            | Status                               |
-| ----------------- | ------------------------------------------------ | ------------------------------------ |
-| URL               | `https://n8n.trisektor.org`                      | `CONFIRMED` route test 2026-09-09    |
-| Project directory | `/srv/stack/n8n/`                                | `RECORDED`; recheck                  |
-| Compose file      | `/srv/stack/n8n/compose.yml`                     | `RECORDED`; recheck                  |
-| n8n image         | `n8nio/n8n:latest` at deployment                 | `PENDING` pinning                    |
-| Database          | `postgres:16-alpine`                             | `RECORDED`                           |
-| Containers        | `n8n-n8n-1`, `n8n-postgres-1`                    | `RECORDED`                           |
-| Host ports        | None; n8n 5678 and PostgreSQL 5432 internal only | `RECORDED`                           |
-| Encryption key    | Persistent key configured                        | `RECORDED`; independent copy pending |
-| Proxy config      | HTTPS public URLs, `N8N_PROXY_HOPS=1`            | `RECORDED`                           |
-| Execution pruning | Configured                                       | `RECORDED`                           |
-
-Compose interpolation incident: PostgreSQL initially failed because Compose-time variables are not sourced from a service `env_file`. `/srv/stack/n8n/.env` was added for interpolation, while `/etc/stack-secrets/n8n.env` remains the runtime secret file. Both are secret-bearing and must remain outside Git.
-
-### 7.2 Conflicting completion claims
-
-| Claim                                   | Earlier source claim                                   | Later controlling evidence                                              | Safe current state                                                     |
-| --------------------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| n8n owner account exists                | 2026-09-09 progress handoff says owner setup completed | Latest master still lists owner setup and credential storage as pending | `CONFLICT`; verify account state without exposing credentials          |
-| n8n backups include current data        | Older handoff says backup snapshots were checked       | Latest evidence says post-n8n backup, dump, and restore are unproven    | `CONFLICT`; require current local/R2 path listing and restore evidence |
-| n8n encryption-key recovery is complete | Deployment records say a persistent key exists         | Independent password-manager copy is not evidenced                      | `PENDING`; verify existence out-of-band without reading the key        |
-
-### 7.3 Critical pending work
-
-- Confirm `N8N_ENCRYPTION_KEY` has an independent password-manager copy.
-- Verify owner/group/mode for `/etc/stack-secrets/n8n.env` and `/srv/stack/n8n/.env`.
-- Create a PostgreSQL custom-format dump.
-- Validate it with `pg_restore --list`.
-- Schedule it only after manual validation.
-- Include the dump, n8n data, secrets path, and recovery instructions in local/R2 backup verification.
-- Perform a non-destructive restore drill using the exact retained encryption key.
-- Create the n8n owner account and record credentials only in the password manager.
-- Create a harmless test workflow.
-- Test webhook behavior before changing the existing Cloudflare Zero Trust policy or adding any bypass.
-- Replace `latest` with a tested immutable version/digest and record rollback.
-
-Safe status checks:
-
-```bash
 cd /srv/stack/n8n
-docker compose ps
-docker compose logs --tail=100 n8n
-docker compose logs --tail=100 postgres
-curl -sI https://n8n.trisektor.org
+docker compose exec -T postgres pg_restore --list < "$latest_dump" \
+  > /tmp/n8n-pg-restore-list.txt
+
+test -s /tmp/n8n-pg-restore-list.txt
+rm -f /tmp/n8n-pg-restore-list.txt
 ```
 
-Do not print `docker compose config` output if it can expose interpolated secrets.
+Never print n8n `.env`, secret files, database passwords, or `N8N_ENCRYPTION_KEY`.
 
 ---
 
-## 8. Kasm Workspaces
+## 9. Kasm Workspaces
 
-### 8.1 Current deployment
+### 9.1 Runtime and route
 
-| Item              | Value                           | Status                               |
-| ----------------- | ------------------------------- | ------------------------------------ |
-| Public URL        | `https://desktop.trisektor.org` | `CONFIRMED`                          |
-| Public path       | Cloudflare -> Caddy -> Kasm     | `CONFIRMED`                          |
-| Kasm endpoint     | Host HTTPS port 8443            | `RECORDED / security review pending` |
-| Kasm release line | `1.19.0-rolling` images         | `RECORDED`; pin strategy pending     |
-| Admin login       | Confirmed working               | `CONFIRMED`, 2026-09-16              |
-| Database          | Kasm PostgreSQL container       | `RECORDED`                           |
+Live inventory confirmed:
 
-Containers:
+- `kasm_proxy`: `kasmweb/proxy:1.19.0-rolling`, host TCP 8443 to container 443.
+- `kasm_rdp_https_gateway`: healthy.
+- `kasm_rdp_gateway`: healthy, host TCP 3389 to container 3389.
+- `kasm_agent`: healthy.
+- `kasm_api`: healthy.
+- `kasm_manager`: healthy.
+- `kasm_guac`: healthy.
+- `kasm_db`: healthy.
 
-- `kasm_proxy`
-- `kasm_rdp_https_gateway`
-- `kasm_rdp_gateway`
-- `kasm_agent`
-- `kasm_api`
-- `kasm_manager`
-- `kasm_guac`
-- `kasm_db`
+The uploaded Kasm terminal evidence also shows repeated API and RDP gateway health checks returning HTTP 200, manager/agent heartbeat activity, and authenticated administrator API activity.
 
-### 8.2 Verified topology and tests
+Status:
 
 ```text
-Browser
-  -> Cloudflare
-  -> Caddy TCP 443
-  -> https://host.docker.internal:8443
-  -> Kasm HTTPS endpoint
-  -> Kasm proxy/API/manager/gateways/database
+Kasm runtime: CONFIRMED
+Kasm API health: CONFIRMED
+Kasm RDP gateway health: CONFIRMED
+Kasm public browser route: CONFIRMED
+Kasm administrator login: CONFIRMED
 ```
 
-Verified on 2026-09-16:
+### 9.2 Intended access path
 
-- Caddy resolved `host.docker.internal` to the Docker bridge gateway.
-- Caddy reached `https://host.docker.internal:8443/` and received HTTP 200.
-- Local public-hostname test through Caddy returned HTTP/2 200.
-- Public HTTP redirected to HTTPS.
-- Kasm administrator login worked.
+The owner confirms Kasm is mapped to `desktop.trisektor.org` and secured with Cloudflare Zero Trust. Use only this browser endpoint for normal operation:
 
-### 8.3 Kasm operational rules
-
-- Use only `https://desktop.trisektor.org` in normal browser operation.
-- Keep Caddy upstream as `https://host.docker.internal:8443`, not localhost.
-- Keep `tls_insecure_skip_verify` limited to the private Caddy-to-Kasm hop.
-- Validate Caddy before reload.
-- Do not rename or assume a nonexistent `kasm` or `kasm_app` container; target `kasm_api` for API/account investigation.
-- Verify Kasm database, persistent volumes, image policy, and restore procedure are included in the backup register.
-
-### 8.4 Kasm recovery register
-
-The Kasm source confirms containers and public functionality but does not identify a completed backup or restore drill. Current recovery state is therefore `UNKNOWN`, not accepted as complete.
-
-Before calling Kasm recoverable, record:
-
-- Exact Kasm persistent volume names and bind mounts.
-- Kasm PostgreSQL database dump method and retention.
-- Installation/configuration artifacts required to recreate the deployment.
-- Whether Kasm administrator recovery is possible without the original installation secret.
-- A non-production restore target and a successful login/session acceptance test.
-- Tested image tags or digests and rollback images for all Kasm components.
-
-Do not infer volume names from container names. Obtain them with read-only `docker inspect` and record only names/paths, never environment values.
-
-Routine checks:
-
-```bash
-docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' | grep kasm
-docker exec caddy sh -c 'wget -qSO- --no-check-certificate https://host.docker.internal:8443/ 2>&1 | head -n 10'
-curl -vk --resolve desktop.trisektor.org:443:127.0.0.1 https://desktop.trisektor.org/ -o /dev/null
-docker logs --since=10m kasm_proxy
-docker logs --since=10m kasm_api
-docker logs --since=10m kasm_manager
+```text
+https://desktop.trisektor.org
 ```
+
+Do not instruct users to connect directly to TCP 3389.
+
+### 9.3 TCP 3389
+
+The live binding and Kasm configuration prove TCP 3389 belongs to the Kasm RDP gateway. The documented browser route goes through Cloudflare/Caddy and does not demonstrate a need for direct public host port 3389.
+
+Current status:
+
+```text
+Ownership: CONFIRMED
+Public binding: CONFIRMED
+Normal browser requirement: NOT DEMONSTRATED
+Security acceptance: PENDING
+```
+
+If removal is approved:
+
+1. Confirm actual live Compose path.
+2. Copy the current Compose file to a private rollback directory.
+3. Remove only host-side `3389:3389`.
+4. Keep internal Kasm RDP port 3389.
+5. Validate Compose.
+6. Recreate only the affected gateway.
+7. Test `desktop.trisektor.org` through Cloudflare.
+8. Test administrator login, session creation, and WebSocket behavior.
+9. Confirm `ss` no longer shows host 3389.
+10. Record result and rollback path.
+
+### 9.4 Kasm token exposure incident
+
+The uploaded `kasem-update-terminal.txt` contains token-bearing Kasm log entries, including registration/host/manager/session token material. This violates the SSOT secret boundary.
+
+Status:
+
+```text
+Kasm token/log hygiene: FAILED — remediation required
+```
+
+Required response:
+
+- Do not copy token values into any document.
+- Remove the artifact from shared/synchronized locations.
+- Rotate or re-register affected Kasm token material through the supported Kasm procedure.
+- Verify Kasm API, RDP gateway, public browser route, session, and administrator login afterward.
+- Record only the fact, timestamp, affected components, and test result.
+
+Do not manually edit logs or perform ad hoc database token changes.
+
+### 9.5 Kasm recovery
+
+Still pending:
+
+- Exact persistent volumes and bind mounts.
+- Kasm PostgreSQL dump method and retention.
+- Installation/configuration artifacts.
+- Administrator recovery procedure.
+- Non-production restore target.
+- Successful login/session test after restore.
+- Tested image digests and rollback images.
+
+Do not claim Kasm recoverability from healthy containers or HTTP 200 health checks.
 
 ---
 
-## 9. OmniRoute, Open WebUI, VS Code, and Claude CLI
+## 10. OmniRoute, Open WebUI, VS Code, and Claude CLI
 
-### 9.1 AI privacy and routing policy
+### 10.1 AI privacy boundary
 
-Ollama was removed on 2026-09-17. There is no local model route in the current
-architecture. Requests from approved clients traverse the internal bridge to
-OmniRoute and may be sent to the provider selected by the `leo-one-free`
-combo.
+Ollama was removed on 2026-09-17. Current OmniRoute requests are provider-bound. Secrets, credentials, VPN material, private keys, secret-bearing logs, and unapproved private business/personal/financial/medical data must not be sent through the provider path.
+
+Recorded intended architecture:
 
 ```text
-n8n (omni_clients) ─┐
-                    ├─> OmniRoute (omni_clients + ai_egress) -> provider
-Approved clients ───┘
+Approved clients -> omni_clients -> omniroute:20128 -> selected provider
+OmniRoute and provider-egress Redis -> ai_egress
 ```
 
-| Client or data class                              | Current route                                      | Rule |
-| ------------------------------------------------- | -------------------------------------------------- | ---- |
-| n8n approved workflow                             | `omni_clients` -> `omniroute:20128/v1` -> provider | Explicit workflow approval required |
-| Nextcloud AI requester                            | Planned `omni_clients` -> OmniRoute                | Attach only the selected requester; disposable test first |
-| Open WebUI                                        | Planned/being migrated through OmniRoute           | Authentication required; no public registration |
-| VS Code                                           | Planned/being migrated through OmniRoute           | Preserve working route during migration |
-| Claude CLI                                        | Planned ephemeral client through OmniRoute         | Non-sensitive work only; narrow workspace |
-| Secrets, credentials, VPN files, private logs     | No AI route                                        | Never send to OmniRoute or cloud providers |
-| Private business, personal, financial, or medical data | No route without deliberate approval            | Treat OmniRoute as cloud-capable |
+The privacy boundary remains `PENDING` until authentication, network membership, route defaults, provider policy, and data classification are independently checked.
 
-Do not enable automatic fallback across privacy boundaries. Keep provider API
-keys in OmniRoute secret storage and client keys in the consuming application
-credential store. Never put key values in Compose, Git, shell history,
-screenshots, chat, or this document.
+### 10.2 OmniRoute
 
-### 9.2 OmniRoute
+Live state:
 
-| Item               | Value                                                            | Status                                     |
-| ------------------ | ---------------------------------------------------------------- | ------------------------------------------ |
-| Container          | `omniroute-omniroute-1`                                          | `CONFIRMED` 2026-09-17                     |
-| Image              | `diegosouzapw/omniroute:3.8.50`                                  | `CONFIRMED`                                |
-| Internal port      | `20128/tcp`                                                      | `CONFIRMED`                                |
-| Host port          | None; `PortBindings={}`                                          | `CONFIRMED`                                |
-| Health             | Docker health reported healthy                                   | `CONFIRMED`; application health still test |
-| Networks           | `ai_egress`, `omni_clients`                                      | `CONFIRMED attachment`                     |
-| Redis              | `omniroute-redis-1`, `redis:7-alpine`                            | `CONFIRMED healthy` in latest evidence     |
-| Runtime            | Production mode, Redis URL, port 20128, memory settings          | `CONFIRMED` without secret values          |
-| Gateway model test | `leo-one-free` returned `claude-sonnet-4.5`                      | `RECORDED`                                 |
-| Dashboard          | `Server is unreachable. Reconnecting...` reported                | `PENDING` diagnosis                        |
-| Compose path       | `/srv/stack/omniroute/compose.yml`                               | `CONFIRMED`, 2026-09-17                 |
+- Container: `omniroute-omniroute-1`.
+- Image: `diegosouzapw/omniroute:3.8.50`.
+- Internal port: 20128/tcp.
+- No host port published.
+- Container healthy.
+- `ai_egress` and `omni_clients` attachment recorded.
+- n8n model execution previously completed through `http://omniroute:20128/v1`.
+- Dashboard previously reported reconnecting/unreachable.
 
-Stage integration evidence, 2026-09-17:
-
-- Project `/srv/stack/omniroute`; Compose `/srv/stack/omniroute/compose.yml`.
-- `omni_clients` is an internal bridge with `172.26.0.0/16`; `omniroute` and
-  n8n were members at verification.
-- OmniRoute retains `ai_egress` for provider access; Redis remains on
-  `ai_egress` only and must not join `omni_clients`.
-- n8n resolved Docker DNS name `omniroute`, reached TCP `20128`, and completed
-  an n8n OpenAI Chat Model execution through `http://omniroute:20128/v1` in
-  approximately 3.2 seconds.
-- Host checks found no listener on ports 20128 or 20129. The dashboard remains
-  private and is accessed through an SSH tunnel; container IPs are ephemeral.
-
-The container remained healthy during the recorded verification, but an
-application-level health/API/WebSocket acceptance test and the dashboard
-reconnect behavior were not fully resolved. A recurring cleanup warning about
-the SQLite table `compression_run_telemetry` was also recorded in earlier
-OmniRoute logs; do not delete application state while investigating it.
-
-Recorded client-key metadata (values are intentionally never stored here):
-
-| Consumer         | Key label             | Route guidance                                                      |
-| ---------------- | --------------------- | ------------------------------------------------------------------- |
-| Open WebUI       | `open-webui-leo`      | OmniRoute only; provider-bound data rules apply                    |
-| VS Code Chat     | `vscode-server-leo`   | OmniRoute only; provider-bound data rules apply                    |
-| Claude CLI       | `claude-cli-leo`      | OmniRoute for approved non-sensitive work                          |
-| Existing n8n AI  | `n8n-omniroute-leo`   | OmniRoute route; approved workflows only                           |
-| Cloud services   | `cloud-omniroute-leo` | No public path approved; do not expose this key                    |
-
-All five keys were recorded as allowing the `leo-one-free` combo, the only
-recorded combo. The metadata is historical and should be reverified before
-rotation or access-policy changes.
-
-Correct internal health check. This is a disposable container operation, not a purely read-only host check: it may pull an image and changes local Docker state. Obtain approval first, or use an already trusted diagnostic container. If this command is retained operationally, pin `curlimages/curl` by a reviewed digest rather than a mutable tag:
+Required acceptance:
 
 ```bash
-docker run --rm --network ai_egress curlimages/curl:8.10.1 \
-  -fsS --max-time 10 http://omniroute:20128/healthz
+# Use an approved existing diagnostic container; do not blindly pull a mutable image.
+# Test internal /healthz, API, dashboard, and WebSocket behavior.
 ```
 
-Do not test `127.0.0.1:20128` on the VPS host because no host port is published. Do not hard-code the historical container IPs `172.22.0.2` or `172.26.0.2`.
+Do not test host `127.0.0.1:20128`; no host port is published. Do not hard-code container IPs.
 
-Pending OmniRoute work:
+Status: `CONFIRMED` gateway/container/routing; `PENDING` application acceptance and dashboard behavior.
 
-1. Locate and verify the actual live Compose file under `/srv`, `/opt`, or another approved path.
-2. Run `/healthz` from each intended network.
-3. Inspect container logs, restart count, OOM state, and dashboard API/WebSocket path.
-4. Verify whether the dashboard expects a browser-accessible tunnel or a different base URL.
-5. Review and potentially rotate the WebSocket bridge secret if prior terminal/session exposure is confirmed.
-6. Record the exact known-good image digest and rollback image.
+### 10.3 Open WebUI
 
-### 9.3 Open WebUI
+Live container is healthy, but final network membership, first-run administration, authentication, and successful OmniRoute-only route are not fully evidenced.
 
-Open WebUI is an OmniRoute-only client by owner direction. The stage inspection
-recorded it on `ai_clients`, `ai_egress`, and `proxy`; that network state is not
-accepted as the final design. The exact final membership and a successful route
-test are not present in the evidence reviewed here. Verify the Compose
-configuration and migrate it through `omni_clients` deliberately, preserving a
-rollback copy and testing `http://omniroute:20128/v1` before removing any
-direct `ai_egress` access.
+Keep public registration, uploads, RAG, tools, MCP, plugins, and automatic provider fallback disabled until reviewed.
 
-Status: first-run administrator setup, authentication, final network migration,
-and route tests are `PENDING`. Keep public registration, uploads, RAG, tools,
-MCP, plugins, and automatic provider fallback disabled until separately
-reviewed.
+Status: `PENDING`.
 
-### 9.4 VS Code Server
+### 10.4 VS Code Server
 
-VS Code Server (`linuxserver/code-server`) is private and recorded on
-`dev_internal` and `ai_egress`. Its final OmniRoute migration is pending. Add
-`omni_clients` through Compose, test the gateway route, and remove direct
-`ai_egress` client access only after the new route passes.
+Live container is running on `linuxserver/code-server:latest`. Prior evidence records private deployment but incomplete authentication and route acceptance.
 
-The source records also describe a narrow `/srv/workspaces` workspace mount; the exact current mount and write permissions require live verification. Status: `PENDING` application authentication, HTTPS/session protection, mount scope, and access-boundary review. Do not expose it publicly or assume container/network privacy replaces application authentication.
+Required:
 
-### 9.5 Claude CLI
+- Enable application authentication.
+- Verify session protection.
+- Verify workspace mount and permissions.
+- Verify intended AI route through OmniRoute.
+- Do not expose publicly.
 
-Claude CLI was built and reaches the OmniRoute path, but provider authentication returned:
+Status: `PENDING`.
+
+### 10.5 Claude CLI
+
+Prior evidence recorded access to OmniRoute but provider error:
 
 ```text
 401 No active credentials for provider: anthropic
 ```
 
-Status: not operationally accepted. Resolve credentials through the approved secret mechanism; never paste credentials into this document or command history. Run only a harmless test request after resolution.
+Resolve through approved secret storage and run only a harmless test. Never place credentials in chat, logs, Compose, or this document.
+
+Status: `PENDING`.
 
 ---
 
-## 10. WireGuard VPN
+## 11. WireGuard
 
-| Item               | Value                        | Status                     |
-| ------------------ | ---------------------------- | -------------------------- |
-| Interface          | `wg0`                        | `RECORDED`                 |
-| Port               | UDP 51820                    | `RECORDED`                 |
-| VPN network        | `10.77.77.0/24`              | `RECORDED`; sensitive      |
-| Server VPN address | `10.77.77.1/24`              | `RECORDED`                 |
-| Routing            | IPv4 full tunnel `0.0.0.0/0` | `CONFIRMED design`         |
-| IPv6 full tunnel   | Not configured               | `DEFERRED`                 |
-| DNS                | `1.1.1.1`                    | `RECORDED`                 |
-| Keepalive          | 15s                          | `RECORDED`                 |
-| Configuration      | `/etc/wireguard/wg0.conf`    | `RECORDED`, secret-bearing |
+### 11.1 Current configuration
 
-Standard WireGuard is deployed. AmneziaWG was earlier planning and is superseded.
+| Item | Value | Status |
+|---|---|---|
+| Interface | `wg0` | `RECORDED` |
+| Port | UDP 51820 | `CONFIRMED` listener/UFW |
+| Network | `10.77.77.0/24` | `RECORDED — sensitive` |
+| Server address | `10.77.77.1/24` | `RECORDED — sensitive` |
+| Routing | IPv4 full tunnel | `CONFIRMED design` |
+| IPv6 full tunnel | Not configured | `DEFERRED` |
 
-Replacement profile set created 2026-09-07:
+### 11.2 Live peer evidence
 
-- `leo-one-mac` -> `10.77.77.7/32`
-- `leo-one-android` -> `10.77.77.8/32`
-- `leo-one-iphone` -> `10.77.77.9/32`
-- `leo-one-moto` -> `10.77.77.10/32`
-- `leo-one-windows` -> `10.77.77.11/32`
+At approximately `2026-09-19 15:28:13 UTC`:
 
-Older profile mapping:
+| Peer address | Mapping | Handshake state |
+|---|---|---|
+| `10.77.77.2/32` | Old `android-leo` | Recent handshake |
+| `10.77.77.3/32` | Old `mac-leo` | No recent handshake |
+| `10.77.77.4/32` | Old `windows-leo` | No recent handshake |
+| `10.77.77.5/32` | Old `iphone-leo` | No recent handshake |
+| `10.77.77.6/32` | Old `moto-leo` | Recent handshake |
+| `10.77.77.7/32` | Replacement `leo-one-mac` | Zero handshake |
+| `10.77.77.8/32` | Replacement `leo-one-android` | Zero handshake |
+| `10.77.77.9/32` | Replacement `leo-one-iphone` | Zero handshake |
+| `10.77.77.10/32` | Replacement `leo-one-moto` | Zero handshake |
+| `10.77.77.11/32` | Replacement `leo-one-windows` | Zero handshake |
 
-- `android-leo` -> `10.77.77.2/32`, working on mobile data in prior evidence.
-- `mac-leo` -> `10.77.77.3/32`, handshake and IPv4 full tunnel verified in prior evidence.
-- `windows-leo` -> `10.77.77.4/32`, profile existed; client test was pending in prior evidence.
-- `iphone-leo` -> `10.77.77.5/32`, connected in prior evidence.
-- `moto-leo` -> `10.77.77.6/32`, connected in prior evidence.
+Status: `PENDING — replacement migration not complete`.
 
-The replacement peers were visible server-side with correct `/32` addresses but had no handshake until imported/activated. Migration was staged with a target of approximately 2026-09-21; completion and old-peer retirement remain `PENDING`.
-
-Migration rules:
+Rules:
 
 - Migrate one device at a time.
 - Never run old and replacement full-tunnel profiles concurrently on one device.
-- Verify handshake and exit IP `89.58.63.213` after each device.
-- Remove old peers only after every replacement device is confirmed.
-- Never share private keys, full profiles, or `wg0.conf`.
-- Do not add `::/0` until IPv6 forwarding, addressing, and firewall policy are deliberately designed.
+- Verify a recent handshake, increasing transfer counters, and exit IP `89.58.63.213` for each replacement.
+- Remove old peers only after all replacements are confirmed.
+- Never share private keys, complete profiles, or `wg0.conf`.
 
-Safe peer reload:
+---
 
-```bash
-sudo wg-quick strip wg0 | sudo tee /tmp/wg0-stripped.conf >/dev/null
-sudo wg syncconf wg0 /tmp/wg0-stripped.conf
-sudo rm -f /tmp/wg0-stripped.conf
-sudo wg show wg0
+## 12. Backup and recovery
+
+### 12.1 Current evidence
+
+The documented R2 process after credential rotation opened the repository and produced snapshot `fdbdc472` at `2026-09-19 08:47:28`, including `/srv/stack`. Vaultwarden inclusion through `/srv/stack` is confirmed.
+
+The baseline local/R2 repositories were restored-tested on 2026-09-09 before later AI/Kasm/Vaultwarden additions were fully incorporated.
+
+### 12.2 Current status
+
+| Area | Status |
+|---|---|
+| Fresh R2 snapshot after credential rotation | `CONFIRMED` |
+| `/srv/stack` in fresh R2 snapshot | `CONFIRMED` |
+| Current n8n dump | `PENDING` until file and `pg_restore --list` evidence |
+| Current Nextcloud backup | `PENDING/CONFLICT` until fresh listing/check/restore |
+| Kasm volumes/database coverage | `PENDING` |
+| OmniRoute/Redis state coverage | `PENDING` |
+| Open WebUI state | `PENDING` |
+| VS Code/workspaces state | `PENDING` |
+| `/etc/wireguard` coverage | `PENDING` |
+| Netdata state | `PENDING` |
+| Repository integrity checks | `PENDING` |
+| Representative restore from each repository | `PENDING` |
+| n8n application restore | `PENDING` |
+| Kasm application restore | `PENDING` |
+| Vaultwarden restore | `DEFERRED` by owner |
+| Disaster-recovery readiness | `NOT CLAIMED` |
+
+### 12.3 Required completion chain
+
+1. Check active process and lock holder.
+2. Verify secret file ownership/modes without printing contents.
+3. Create and validate n8n custom-format dump.
+4. Run local backup.
+5. Run R2 backup through the existing script.
+6. List latest snapshots.
+7. Confirm current paths are included.
+8. Run `restic check` for both repositories.
+9. Restore representative harmless files.
+10. Perform controlled n8n and Kasm application restore drills.
+11. Record timestamp, snapshot IDs, coverage, restore result, retention, and rollback assumptions.
+
+Never delete production volumes or restore over live databases.
+
+---
+
+## 13. Vaultwarden
+
+### 13.1 Confirmed state
+
+Evidence date: `2026-09-19`.
+
+- Version `1.37.3` deployed and healthy.
+- Public hostname: `vault.trisektor.org`.
+- HTTPS route: HTTP/2 200.
+- `/alive`: HTTP/2 200.
+- HTTP redirects to HTTPS.
+- No host port published; internal port 80 only.
+- Fresh R2 backup includes `/srv/stack`, which covers Vaultwarden data.
+- Cloudflare Access was not applied initially to preserve Bitwarden client compatibility.
+- Public registration remains temporarily enabled.
+- Restore test is deferred by owner.
+
+### 13.2 Outstanding work
+
+- Onboard the six-account family target.
+- Test web vault, browser extension, mobile, and desktop clients as applicable.
+- Confirm synchronization.
+- Enable 2FA and store recovery codes offline.
+- Disable public registration after onboarding and client tests.
+- Confirm `SIGNUPS_ALLOWED=false` from a private browser session.
+- Record exact image digest in SSOT.
+- Add backup-failure monitoring.
+- Perform restore test when owner approves.
+
+Never record Vaultwarden passwords, admin tokens, Argon2id hashes, database contents, recovery codes, or `.env` values.
+
+---
+
+## 14. Security and hardening
+
+### 14.1 Confirmed controls
+
+- UFW active with default incoming/routed deny.
+- Cloudflare proxy and Full (strict) TLS documented.
+- Cloudflare Zero Trust owner-confirmed for n8n, Nextcloud, and Kasm.
+- Nextcloud unauthenticated Access enforcement live-confirmed.
+- Origin CA used by Caddy.
+- Database services have no host-published ports.
+- OmniRoute has no host-published port.
+- AI services intended to remain private.
+- Secrets stored outside Git in restricted paths.
+- WireGuard IPv4 full tunnel available.
+- Kasm browser access is through `desktop.trisektor.org`.
+
+### 14.2 Security gaps
+
+1. Resolve or formally accept direct public TCP 3389 exposure.
+2. Rotate Kasm token material exposed in uploaded terminal/log artifacts.
+3. Verify exact Cloudflare policy exports and authorized flows.
+4. Verify n8n webhook behavior through Access.
+5. Test Nextcloud/Kasm non-browser clients through intended access design.
+6. Verify AI network membership and privacy controls.
+7. Review Docker group and agent isolation.
+8. Review SSH keys-only access and root-login policy without losing recovery.
+9. Pin floating images.
+10. Define Kasm upgrade and rollback policy.
+11. Add protected Netdata alerting.
+12. Verify backup coverage and restore drills before origin hardening.
+
+### 14.3 Secret exposure incident
+
+The uploaded Kasm terminal file contains token-bearing log material. Treat the following as exposed:
+
+- Kasm registration/session token material.
+- Kasm host/manager token material.
+- Any similar secret-bearing log values in the same artifact.
+
+Remediate by supported rotation/re-registration. Do not copy values into this document or attempt manual token edits.
+
+---
+
+## 15. Claim-level conflict register
+
+```markdown
+| Claim | Conflicting or supporting sources | Controlling evidence | Current status | Required AI behavior |
+| --- | --- | --- | --- | --- |
+| Nextcloud maintenance mode cleared | Older 2026-09-09/13 completion claims vs failed 2026-09-12 backup attempt | Fresh `occ status` and maintenance read-back at 2026-09-19 15:18:27 UTC; post-repair status at approximately 15:23 UTC | `CONFIRMED` | May state that Nextcloud is not in maintenance mode |
+| Nextcloud repair completed | Older completion claims vs missing dated repair output | `maintenance:repair --include-expensive` completed approximately 15:22 UTC; post-status showed no DB upgrade pending | `CONFIRMED` | May state repair completed; do not infer backup recoverability |
+| Nextcloud quota set to 180 GB | Earlier quota claim vs later uncertainty | Fresh `occ user:info leo` at 15:18:27 UTC: quota 180 GB | `CONFIRMED` | May state the quota is verified |
+| Nextcloud background jobs operating | Earlier completion claims vs post-incident uncertainty | Job list showed execution through 15:15 UTC | `CONFIRMED — recent execution observed` | Do not infer mail delivery or client acceptance |
+| Nextcloud service containers running | Historical uncertainty vs live Docker state | Nextcloud/cron up; MariaDB healthy; Redis up at approximately 15:21 UTC | `CONFIRMED — container/service level` | Do not equate this with restore readiness |
+| Nextcloud public route protected by Cloudflare Access | Owner confirmation vs older deferred records | Requests to `/` and `/status.php` returned Access HTTP 302 at 15:21:06 UTC | `CONFIRMED — unauthenticated protection` | Preserve Access; do not bypass it |
+| Nextcloud authenticated client acceptance | Historical client tests vs current unauthenticated evidence | Current authenticated browser/client/WebDAV/CalDAV/CardDAV tests not supplied | `PENDING` | Test through intended Access-aware path |
+| Nextcloud backup complete | Older handoffs vs missing current artifact chain | Snapshot/check/restore evidence not supplied for current state | `CONFLICT` | Treat as unverified |
+| Kasm is served through `desktop.trisektor.org` | Kasm SSOT, owner statement, and Caddy route | Owner confirms mapping and Zero Trust; Caddy route and admin login tested | `CONFIRMED` | Use the protected hostname as the normal route |
+| Cloudflare Zero Trust protects Kasm browser route | Owner confirmation and route evidence vs older deferred documents | Owner confirmation for `desktop.trisektor.org`; exact policy export pending | `OWNER-CONFIRMED` | Preserve protection; do not infer policy details |
+| Kasm runtime is operational | Kasm terminal health/heartbeat/admin evidence and live container health | Repeated API/RDP health checks HTTP 200; Kasm components healthy | `CONFIRMED` | Do not infer recovery readiness |
+| TCP 8443 belongs to Kasm | Listener ambiguity vs live Docker mapping | `kasm_proxy` maps host 8443 to container 443 | `CONFIRMED — ownership` | Preserve Caddy upstream; do not alter blindly |
+| TCP 3389 belongs to Kasm | Listener ambiguity vs live Docker/configuration | `kasm_rdp_gateway` maps host 3389 and Kasm config defines proxy port 3389 | `CONFIRMED — ownership` | Treat as separate direct exposure |
+| TCP 3389 is required for normal Kasm browser access | Direct RDP publication vs documented Cloudflare/Caddy browser route | Normal documented route uses `desktop.trisektor.org`; direct 3389 requirement not demonstrated | `NOT REQUIRED BY DOCUMENTED ARCHITECTURE` | Do not advertise direct 3389 |
+| TCP 3389 public exposure is acceptable | Kasm internal RDP design vs public binding | Live IPv4/IPv6 host binding; UFW has no explicit rule; browser path is separately protected | `PENDING SECURITY DECISION` | Do not remove or retain blindly; test a reversible change |
+| Telemetry ports 4317/8125/19999 are publicly exposed | Prior listener observation vs live bind ownership | OTEL and Netdata listeners are loopback-only | `CONFIRMED LOOPBACK-ONLY` | Do not expose them |
+| OmniRoute has public host exposure | Dashboard concern vs live Docker port inspection | OmniRoute has internal 20128/tcp and no host mapping | `CONFIRMED PRIVATE HOST BINDING` | Preserve private routing |
+| OmniRoute is application-operational | Docker health and n8n model test vs dashboard reconnecting issue | Internal health/API/WebSocket acceptance not fully supplied | `PENDING APP ACCEPTANCE` | Do not equate container health with acceptance |
+| Historical `ai_clients` network is absent | SSOT marks network historical vs live inventory | Live Docker network list shows `ai_clients` exists | `CONFIRMED EXISTS; MEMBERSHIP PENDING` | Verify memberships before deletion/detach |
+| AI privacy boundary is enforced | Ollama removal and intended architecture vs missing auth/data tests | Network membership, auth, defaults, provider policy, classification evidence incomplete | `PENDING` | Never send secrets; require approval for private data |
+| WireGuard migration complete | Replacement profiles staged vs live handshake output | Old `.2` and `.6` have handshakes; replacements `.7`–`.11` have zero | `PENDING — NOT COMPLETE` | Do not remove old peers |
+| Fresh R2 backup exists | Post-rotation backup evidence | Snapshot `fdbdc472` at 2026-09-19 08:47:28 including `/srv/stack` | `CONFIRMED — snapshot` | Do not infer full coverage or restore readiness |
+| All persistent services are recoverable | Older baseline restores vs later service additions | Current coverage and application restore drills incomplete | `PENDING` | Do not claim disaster recovery readiness |
+| Kasm backup and restore complete | Healthy runtime vs missing restore drill | No non-production Kasm restore evidence | `PENDING` | Do not claim Kasm recoverability |
+| n8n owner and backup complete | 2026-09-09 progress handoff vs pending register | Current account check, dump, key recovery, snapshot, and restore not all evidenced | `CONFLICT/PENDING` | Do not claim operational acceptance |
+| Kasm token material remains uncompromised | Secret boundary vs uploaded token-bearing logs | `kasem-update-terminal.txt` contains token-bearing Kasm log lines | `FAILED — ROTATION REQUIRED` | Rotate affected material; never reproduce values |
+| Container images are immutably pinned | Local digests observed vs running floating tags | n8n, VS Code, Open WebUI, and rolling Kasm tags remain mutable in Compose/inventory | `PENDING` | Pin one stack at a time with rollback |
+| Vaultwarden recovery-tested | Healthy deployment and R2 inclusion vs owner-deferred restore | No Vaultwarden restore test | `DEFERRED` | Do not claim recovery-tested status |
 ```
 
-Backup coverage for `/etc/wireguard/` is not proven and is a critical backup gap.
+For every future conflict, add a row before changing the dashboard or task register. A conflict is resolved only by fresh evidence, not by choosing the newest prose document.
 
 ---
 
-## 11. Monitoring and Observability
+## 16. Master task register
 
-### Netdata
+### Critical
 
-| Item                        | Value                                        | Status           |
-| --------------------------- | -------------------------------------------- | ---------------- |
-| Version                     | 2.11.0                                       | `RECORDED`       |
-| Bind address                | `127.0.0.1:19999`                            | `RECORDED`       |
-| Access                      | SSH tunnel                                   | `RECORDED`       |
-| Database collector warnings | Observed; not confirmed as database failures | `PENDING` review |
-| Alerting                    | No protected notification design accepted    | `PENDING`        |
+- [x] Verify Nextcloud `occ status`; maintenance mode is off.
+- [x] Verify Nextcloud repair and post-repair state.
+- [x] Verify Nextcloud user `leo` quota reads 180 GB.
+- [x] Verify recent Nextcloud background-job execution.
+- [x] Map listeners 3389, 8443, 4317, 8125, and 19999.
+- [x] Confirm Kasm runtime, API, RDP gateway, and public route evidence.
+- [x] Confirm OmniRoute has no host-published port.
+- [x] Confirm fresh post-rotation R2 snapshot evidence including `/srv/stack`.
+- [ ] Rotate/remediate Kasm token-bearing log exposure.
+- [ ] Decide and safely remediate direct public TCP 3389 exposure.
+- [ ] Verify n8n encryption-key copy out-of-band.
+- [ ] Create and validate n8n PostgreSQL custom-format dump.
+- [ ] Verify current local/R2 backup coverage.
+- [ ] Run Restic integrity checks.
+- [ ] Restore representative files from local and R2 repositories.
+- [ ] Complete n8n isolated restore drill.
+- [ ] Complete Kasm isolated restore drill.
+- [ ] Verify `/etc/wireguard` backup coverage.
+- [ ] Verify current Kasm, AI, Open WebUI, VS Code, and workspace coverage.
 
-Do not expose Netdata publicly before authentication, TLS, access control, and notification boundaries are reviewed.
+### High
 
-### Telemetry listener discrepancy
+- [ ] Complete authenticated Nextcloud browser/client/WebDAV/CalDAV/CardDAV tests.
+- [ ] Complete n8n owner-account verification and harmless workflow test.
+- [ ] Test n8n webhook behavior through the intended Cloudflare policy.
+- [ ] Diagnose OmniRoute `/healthz`, dashboard API, and WebSocket acceptance.
+- [ ] Verify AI network membership and privacy controls.
+- [ ] Enable and test VS Code Server authentication.
+- [ ] Complete Open WebUI first-run setup, authentication, network, and OmniRoute route test.
+- [ ] Resolve Claude CLI provider authentication and run harmless request.
+- [ ] Complete WireGuard replacement migration; verify handshakes and exit IPs.
+- [ ] Export/document Cloudflare Zero Trust policy structure and authorized tests.
+- [ ] Test Kasm authenticated browser sessions and WebSocket behavior after any 3389 decision.
+- [ ] Complete Vaultwarden onboarding, client tests, synchronization, 2FA, and registration lock-down.
 
-Ports 4317 and 8125 appeared in a 2026-09-17 host listener observation. Ownership, bind address, firewall treatment, and necessity are `UNKNOWN`. Map them before changing firewall or service configuration.
+### Medium
 
-### Private SSH access runbook
-
-SSH tunnels are the approved access method for private dashboards and services. Do not publish private service ports as a shortcut.
-
-Netdata tunnel pattern from a trusted workstation:
-
-```bash
-ssh -N -L 19999:127.0.0.1:19999 leo-one
-```
-
-For Open WebUI, VS Code Server, and OmniRoute, discover current container IPs
-dynamically and never persist them. The following runbook is from a trusted
-Mac workstation; adjust network-selection filters if the live Docker networks
-or service names differ:
-
-```bash
-lsof -nP -iTCP:3000 -sTCP:LISTEN
-lsof -nP -iTCP:8080 -sTCP:LISTEN
-lsof -nP -iTCP:20128 -sTCP:LISTEN
-
-WEBUI_IP=$(ssh leo-one 'docker inspect open-webui --format "{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}"' | tr ' ' '\n' | awk '/^172\.22\./{print; exit}')
-CODE_IP=$(ssh leo-one 'docker inspect vscode-server --format "{{range .NetworkSettings.Networks}}{{.IPAddress}} {{end}}"' | tr ' ' '\n' | awk '/^172\.23\./{print; exit}')
-OMNI_IP=$(ssh leo-one "docker inspect omniroute-omniroute-1 --format '{{with index .NetworkSettings.Networks \"ai_egress\"}}{{.IPAddress}}{{end}}'")
-printf 'Open WebUI IP: %s\nVS Code IP: %s\nOmniRoute IP: %s\n' "$WEBUI_IP" "$CODE_IP" "$OMNI_IP"
-
-test -n "$WEBUI_IP" && test -n "$CODE_IP" && test -n "$OMNI_IP"
-ssh -fN -L "3000:${WEBUI_IP}:8080" leo-one
-ssh -fN -L "8080:${CODE_IP}:8443" leo-one
-ssh -N -L "20128:${OMNI_IP}:20128" leo-one
-```
-
-Local endpoints from that runbook are Open WebUI at
-`http://localhost:3000`, VS Code Server at `http://localhost:8080`, and the
-OmniRoute dashboard at `http://localhost:20128/dashboard`. Prefer the
-foreground OmniRoute tunnel while administering and close it with `Ctrl+C`.
-If a local address is already in use, test the existing endpoint before
-stopping anything. If Docker service-name resolution fails, use the current
-container IP method above.
-
-Verify a tunnel locally before using it, keep the SSH session visible, and close it when finished. Container IPs are ephemeral. The SSH alias, user, port, key location, and recovery access are intentionally not recorded here.
-
----
-
-## 12. Backup and Recovery
-
-### 12.1 Documented baseline
-
-Local and Cloudflare R2 Restic backup baseline was completed and restore-tested on 2026-09-09 before later AI/Kasm additions were fully incorporated.
-
-| Backup              | Location                           | Schedule                                   | Status                                      |
-| ------------------- | ---------------------------------- | ------------------------------------------ | ------------------------------------------- |
-| Local Restic        | `/srv/stack/backups/restic`        | Daily 02:00 UTC                            | Baseline verified; current coverage pending |
-| R2 Restic           | Cloudflare R2 bucket `cupnet-leo1` | Monday/Thursday 03:30 UTC                  | Baseline verified; current coverage pending |
-| PostgreSQL n8n dump | `/srv/stack/backups/n8n-postgres`  | Proposed 01:30 UTC                         | Not proven complete                         |
-| Provider snapshot   | netcup control panel               | One snapshot remained in 2026-09-04 record | Recheck                                     |
-
-Documented backup scope includes `/srv/stack/`, `/etc/stack-secrets/`, and `/home/leo/`, but the following current coverage is not proven:
-
-- `/etc/wireguard/`
-- Kasm volumes/database
-- OmniRoute data volume and Redis state
-- Open WebUI state
-- VS Code Server state
-- Netdata state
-- `/srv/workspaces`
-- n8n PostgreSQL dump and exact encryption key recovery path
-
-### 12.2 Backup safety rules
-
-- Never print passwords or secret file contents.
-- Never assume a successful backup command means a restorable backup.
-- Verify snapshot creation, path inclusion, repository integrity, and an actual restore.
-- Keep local and off-site repositories independent.
-- Test restoration into a non-production target.
-- Do not delete production volumes during backup troubleshooting.
-- Treat the Restic password and n8n encryption key as separate critical recovery materials.
-
-### 12.3 Required backup completion chain
-
-1. Verify secret file ownership and modes.
-2. Create the n8n logical dump and validate with `pg_restore --list`.
-3. Run local backup.
-4. Run R2 backup.
-5. List latest snapshots without printing secret contents.
-6. Confirm current n8n, AI, Kasm, WireGuard, secret, and persistent-volume paths are included.
-7. Run `restic check` for both repositories.
-8. Restore a harmless representative file from each repository.
-9. Perform a controlled application restore drill for n8n and Kasm.
-10. Record exact evidence, timestamp, retention result, and rollback assumptions here.
-
-### 12.4 n8n dump runbook
-
-The intended dump location is `/srv/stack/backups/n8n-postgres`, root-only mode 0700. The intended process is:
-
-```bash
-sudo install -d -o root -g root -m 0700 /srv/stack/backups/n8n-postgres
-sudo /usr/local/sbin/n8n-postgres-backup
-
-latest_dump=$(sudo find /srv/stack/backups/n8n-postgres -maxdepth 1 \
-  -type f -name 'n8n-*.dump' -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
-
-sudo bash -ceu '
-  set -o pipefail
-  latest_dump=$(find /srv/stack/backups/n8n-postgres -maxdepth 1 \
-    -type f -name "n8n-*.dump" -printf "%T@ %p\\n" | sort -n | tail -1 | cut -d" " -f2-)
-  test -n "$latest_dump"
-  test -r "$latest_dump"
-  docker compose --project-directory /srv/stack/n8n \
-    -f /srv/stack/n8n/compose.yml exec -T postgres \
-    pg_restore --list < "$latest_dump" > /tmp/n8n-pg-restore-list.txt
-  test -s /tmp/n8n-pg-restore-list.txt
-  sed -n "1,20p" /tmp/n8n-pg-restore-list.txt
-  rm -f /tmp/n8n-pg-restore-list.txt
-'
-```
-
-The entire validation runs with root access because the dump directory is root-only. `pipefail`, non-empty-file checks, and `pg_restore` exit status prevent truncated output from being mistaken for validation. Do not schedule recurring dumps until the manual dump and validation succeed.
-
----
-
-## 13. Security Posture and Hardening
-
-### Current controls
-
-- UFW default incoming deny is documented.
-- Cloudflare proxy and Full (strict) TLS are documented.
-- Cloudflare Zero Trust protection is owner-confirmed for n8n, Nextcloud, and Kasm subdomains.
-- Origin CA certificate is used explicitly by Caddy.
-- Database services are intended to be internal-only.
-- AI services are intended to be private and not publicly routed.
-- Secrets are stored outside Git in restricted paths.
-- WireGuard provides an IPv4 full-tunnel option.
-
-### Security gaps requiring action
-
-1. Explain or close unexpected listeners 3389, 8443, 4317, and 8125.
-2. Review SSH keys-only access and root-login policy without losing console/SSH recovery.
-3. Verify `leo` group membership and ensure no untrusted agent has Docker/socket/secrets access.
-4. Enable VS Code Server application authentication.
-5. Review OmniRoute dashboard bridge authentication and possible secret exposure.
-6. Pin floating container images to tested immutable digests.
-7. Define Kasm upgrade and rollback policy.
-8. Design origin protection only after recovery and backups are verified.
-9. Document and independently test the already-enabled Cloudflare Zero Trust policies, including n8n webhooks and Nextcloud/Kasm client behavior.
-10. Define protected Netdata alerting without leaking infrastructure data.
-
-### Hardening explicitly deferred
-
-- Cloudflare IP allowlisting, Authenticated Origin Pulls, or Cloudflare Tunnel migration.
-- Removing, weakening, or bypassing the already-enabled Cloudflare Zero Trust policies.
-- IPv6 WireGuard full tunnel.
-- Hermes deployment.
-- Any AI agent Docker group, Docker socket, unrestricted sudo, secrets group, VPN configuration, or Caddy key access.
-
----
-
-## 14. Completed Processes and Evidence Ledger
-
-This section records what was done, not only the resulting state.
-
-|       Date | Process                                           | Result                                                                                                   | Evidence status                                                    |
-| ---------: | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| 2026-09-04 | Provider/hardware baseline captured               | Hardware, IP, hostname candidates, and snapshot count recorded                                           | `RECORDED`                                                         |
-| 2026-09-05 | Cloudflare Origin CA planning/certificate setup   | Full (strict) origin model established                                                                   | `RECORDED`                                                         |
-| 2026-09-07 | Replacement WireGuard profiles created and staged | Five replacement profiles created                                                                        | `RECORDED`; migration incomplete                                   |
-| 2026-09-09 | MariaDB compatibility correction                  | Mutable `mariadb:lts` replaced with MariaDB 11.8 while fresh                                             | `RECORDED`                                                         |
-| 2026-09-09 | n8n/PostgreSQL deployment                         | PostgreSQL interpolation issue fixed using Compose `.env`; n8n started                                   | `RECORDED`                                                         |
-| 2026-09-09 | Caddy n8n route correction                        | Temporary response replaced with `reverse_proxy n8n:5678`                                                | `CONFIRMED` route test                                             |
-| 2026-09-09 | Local Restic baseline                             | Repository initialized, backup and restore tested                                                        | `RECORDED`; scope now stale/incomplete                             |
-| 2026-09-09 | Cloudflare R2 Restic baseline                     | R2 repository initialized, upload/check/restore tested                                                   | `RECORDED`; current scope now stale/incomplete                     |
-| 2026-09-10 | OmniRoute and Redis deployment                    | AI gateway and Redis deployed                                                                            | `RECORDED`                                                         |
-| 2026-09-10 | AI egress diagnosis                               | Internal-only AI network lacked egress; `ai_egress` approach adopted                                     | `RECORDED`                                                         |
-| 2026-09-11 | Ollama guardrails/models                          | Qwen models installed/tested for local route                                                             | `RECORDED`                                                         |
-| 2026-09-12 | Nextcloud backup attempt                          | Script entered/attempted maintenance and stopped without trusted artifacts                               | `CONFIRMED incident`; resolution pending                           |
-| 2026-09-13 | Brevo SMTP setup                                  | IP authorization issue cleared; activation/delivery remained pending                                     | `RECORDED`                                                         |
-| 2026-09-13 | Open WebUI and VS Code deployment                 | Private services deployed and routes configured                                                          | `RECORDED`; acceptance incomplete                                  |
-| 2026-09-13 | OmniRoute combo/client setup                      | Combo and client-key labels created; route tested                                                        | `RECORDED`; secret values omitted                                  |
-| 2026-09-13 | Netdata installation                              | Loopback monitoring with SSH access tested                                                               | `RECORDED`                                                         |
-| 2026-09-16 | Kasm route and TLS path                           | Caddy-to-Kasm and public hostname returned 200                                                           | `CONFIRMED`                                                        |
-| 2026-09-16 | Kasm administrator login                          | Login confirmed                                                                                          | `CONFIRMED`                                                        |
-| 2026-09-17 | OmniRoute live Docker inspection                  | Healthy container, networks, no host port, runtime details recorded                                      | `CONFIRMED`                                                        |
-| 2026-09-17 | AI network design documentation                   | `ai_egress` and `omni_clients` roles documented                                                          | `CONFIRMED design`; policy validation pending                      |
-| 2026-09-17 | Cloudflare Zero Trust protection                  | Owner confirmed policies protect `n8n.trisektor.org`, `cloud.trisektor.org`, and `desktop.trisektor.org` | `OWNER-CONFIRMED`; exact policies and client/webhook tests pending |
-
-### Process acceptance language
-
-A process is not complete merely because a command was run. Mark it complete only when:
-
-- The expected artifact exists.
-- The artifact is validated.
-- The service behavior is tested.
-- Security boundaries are checked.
-- Recovery/rollback is documented.
-- Evidence is dated and recorded here.
-
----
-
-## 15. Chronological Evolution
-
-- **2026-09-04:** Infrastructure capture; provider and hardware baseline created.
-- **2026-09-05:** Early planning and Cloudflare/Nextcloud stack work.
-- **2026-09-07:** New standard-WireGuard peer profile set created; AmneziaWG planning superseded.
-- **2026-09-09:** MariaDB version corrected; n8n/PostgreSQL deployed; Caddy n8n route finalized; local and R2 Restic baseline verified before later service additions.
-- **2026-09-10:** OmniRoute/Redis deployed; AI egress issue diagnosed and network architecture changed.
-- **2026-09-11:** Local Ollama Qwen models and privacy-routing guardrails were recorded; this design was later superseded by Ollama removal.
-- **2026-09-12:** Nextcloud backup script incident created current maintenance/backup uncertainty.
-- **2026-09-13:** SMTP setup, Open WebUI, VS Code, OmniRoute combo, and Netdata progressed; acceptance remained incomplete in later evidence.
-- **2026-09-16:** Kasm public route, private TLS hop, and administrator login verified.
-- **2026-09-17:** OmniRoute live inspection confirmed healthy/no host port and documented AI network intent; dashboard and backup/security gaps remained.
-- **2026-09-17:** Ollama was removed; `omni_clients` was implemented as the internal client bridge, OmniRoute retained `ai_egress`, and n8n completed a successful OpenAI-compatible model execution through `omniroute:20128/v1`.
-- **2026-09-17:** Owner confirmed Cloudflare Zero Trust is already enabled for n8n, Nextcloud, and Kasm at their subdomains; policy details and service-specific compatibility evidence remain to be recorded.
-
----
-
-## 16. Master Task Register
-
-### Critical: perform before broad upgrades or hardening
-
-- [ ] Check Nextcloud `occ status`; resolve maintenance mode safely.
-- [ ] Map unexpected host listeners 3389, 8443, 4317, and 8125 to intended services and UFW rules.
-- [ ] Verify n8n encryption key independently stored in the password manager.
-- [ ] Verify n8n secret file ownership and modes.
-- [ ] Create and validate the n8n PostgreSQL dump.
-- [ ] Verify local and R2 backups include n8n, AI, Kasm, WireGuard, secrets, and persistent volumes.
-- [ ] Run Restic integrity checks and representative restores.
-- [ ] Verify `/etc/wireguard/` backup coverage.
-- [ ] Confirm a Kasm database/application restore procedure.
-- [ ] Record the exact Vaultwarden image digest in the canonical SSOT.
-- [ ] Monitor the next scheduled R2 backup after credential rotation.
-- [ ] Onboard six family members, test web/browser/mobile/desktop clients, and test synchronization.
-- [ ] Enable 2FA for family accounts and store recovery codes offline.
-- [ ] Disable Vaultwarden public registration after onboarding and client checks.
-- [ ] Perform a non-destructive Vaultwarden restore test (deferred by owner).
-
-### High: complete next
-
-- [ ] Diagnose OmniRoute dashboard reconnecting banner through internal health/API/WebSocket tests.
-- [ ] Locate and record the actual OmniRoute Compose project path.
-- [ ] Complete n8n restore drill and owner account setup.
-- [ ] Complete Brevo activation and delivered Nextcloud email test.
-- [ ] Test password reset, then enable Nextcloud TOTP and secure recovery codes.
-- [ ] Verify Nextcloud cron, maintenance window, repair, quota, and client workflows.
-- [ ] Enable VS Code Server authentication.
-- [ ] Complete Open WebUI administrator setup and one safe OmniRoute route test.
-- [ ] Resolve Claude CLI provider authentication and run one harmless request.
-- [ ] Complete WireGuard replacement migration; remove old peers only after proof.
-- [ ] Record and independently test Cloudflare Zero Trust policies for n8n, Nextcloud, and Kasm, including webhooks and non-browser clients.
-
-### Medium: controlled maintenance
-
-- [ ] Pin `latest` and rolling images to tested immutable digests, with rollback records.
-- [ ] Document one-stack-at-a-time upgrade procedure.
-- [ ] Review Netdata collector warnings without deleting state.
-- [ ] Add protected Netdata alerting.
-- [ ] Add Kasm and AI gateway/client volumes to the backup register.
+- [ ] Pin floating image tags to reviewed immutable digests.
+- [ ] Record tested rollback images and one-stack upgrade procedure.
+- [ ] Record exact Vaultwarden image digest.
+- [ ] Define Kasm upgrade/rollback policy.
 - [ ] Review SSH hardening and recovery path.
-- [ ] Review Docker group and agent isolation.
+- [ ] Review Docker group and AI-agent isolation.
+- [ ] Review Netdata warnings.
+- [ ] Add protected monitoring and backup-failure alerting.
+- [ ] Perform Vaultwarden restore test when owner approves.
 
 ### Deferred by design
 
-- [ ] Origin IP protection via Cloudflare ranges, AOP, or Tunnel.
-- [ ] Removing or bypassing the existing Cloudflare Zero Trust protection without an approved recovery plan.
-- [ ] IPv6 WireGuard full-tunnel routing.
+- [ ] IPv6 WireGuard full tunnel.
+- [ ] Origin IP hardening, Authenticated Origin Pulls, or Cloudflare Tunnel migration.
 - [ ] OmniRoute public exposure.
-- [ ] Hermes agent deployment.
-- [ ] Any agent access to Docker socket, Docker group, `stack-secrets`, WireGuard, unrestricted sudo, or Caddy keys.
+- [ ] Hermes deployment.
+- [ ] Agent access to Docker socket, Docker group, `stack-secrets`, WireGuard, unrestricted sudo, or Caddy keys.
 
 ---
 
-## 17. Maintenance Runbook
+## 17. Change Record
 
-### Daily or on every operational session
-
-```bash
-hostnamectl
-uptime
-free -h
-df -hT
-sudo ufw status verbose
-sudo ss -lntup
-docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
-```
-
-Review unexpected changes, unhealthy containers, storage below the 80–100 GiB safety reserve, and newly exposed ports.
-
-Service-specific acceptance checks, when the relevant service is enabled:
-
-```bash
-docker exec -u www-data nextcloud php occ status
-docker compose -f /srv/stack/n8n/compose.yml ps
-docker ps --format '{{.Names}} {{.Status}}' | grep -E 'kasm|omniroute|open-webui|vscode' || true
-sudo wg show wg0
-sudo restic --repo /srv/stack/backups/restic \
-  --password-file /etc/stack-secrets/restic-password.txt snapshots
-```
-
-For private AI checks, use an approved existing diagnostic container or the explicitly approved disposable check in §9.3. For backups, never print password files or environment files. A container being `Up`, an HTTP 200, or a Docker health result does not prove authentication, database integrity, backup recoverability, or user-level acceptance.
-
-### Before any service change
-
-1. Read this file and identify current evidence date.
-2. Confirm the affected Compose project and volumes.
-3. Check recent backups and restore viability.
-4. Capture read-only status and logs.
-5. Define rollback and maintenance window.
-6. Change one stack at a time.
-7. Validate configuration before reload.
-8. Test public and private paths.
-9. Record versions, digests, result, and rollback in this file.
-
-### After any service change
-
-```bash
-docker ps
-docker compose ps
-docker logs --tail=100 <changed-service>
-curl -sI https://cloud.trisektor.org
-curl -sI https://n8n.trisektor.org
-curl -sI https://desktop.trisektor.org
-```
-
-Use service-specific tests instead of assuming HTTP 200 proves database, authentication, backup, or workflow health.
-
-### Upgrade policy
-
-- No blind `docker compose pull && docker compose up -d`.
-- Record current image tags/digests and rollback images first.
-- Review release notes and compatibility.
-- Back up and verify restore path.
-- Upgrade one stack at a time.
-- Run health checks and user-level tests.
-- Keep the previous known-good image available until acceptance is complete.
-
-### Scheduled maintenance areas
-
-The following operational processes are not yet evidenced as complete and must be assigned a cadence and owner before being considered enterprise-ready:
-
-- Host security updates and reboot/kernel maintenance.
-- Docker Engine and Compose updates, including daemon configuration backup.
-- Time synchronization and clock-drift monitoring.
-- SSH key/access review and removal of stale access.
-- Secret, certificate, SMTP, provider-key, and WireGuard rotation procedures.
-- Certificate-expiry and Cloudflare Origin CA renewal tracking.
-- DNS change review and rollback.
-- Backup retention review and periodic restore drills.
-- Incident response, service outage records, and post-incident review.
-- Resource capacity review for CPU, RAM, storage, Docker logs, databases, and model volumes.
-- Recovery objectives: RPO/RTO values remain `UNKNOWN` and must be agreed before claiming disaster-recovery readiness.
-
----
-
-## 18. Recovery Rules
-
-- Never delete Docker named volumes during troubleshooting.
-- Never restore against the live production database without a deliberate, confirmed restore plan.
-- Stop the affected application before database restore.
-- Preserve the exact n8n encryption key for credential decryption.
-- Confirm target and destination before any restore.
-- Keep console/SSH recovery available before firewall/origin hardening.
-- Keep Cloudflare Full (strict) and Origin CA paths aligned.
-- Do not rotate keys, certificates, VPN profiles, or secrets without a tested migration/rollback.
-- If an AI recommendation conflicts with this file, stop and request live evidence rather than choosing by assumption.
-
----
-
-## 19. Source Provenance and Supersession
-
-The consolidation reviewed the two substantive source documents and the
-procedural inbox README that were present locally:
-
-- `VPS-CUPNET-SUPER-SINGLE-SOURCE-OF-TRUTH-2026-09-13-v1.6-verified-full.md` — older verified baseline, superseded where later evidence differs.
-- `omniroute-n8n-stage-ssot-2026-09-17.md` — latest stage record for the implemented `omni_clients` bridge, n8n integration, Ollama removal, and provider-bound privacy policy.
-- `VPS_STATE_vaultwarden_update (1).md` — September 19, 2026 Vaultwarden deployment, public-route, backup-rotation, and onboarding evidence; merged into §21 and removed after verification.
-- `README.md` — inbox handling instructions; not an operational evidence source.
-
-These source files were merged into this document and removed after review.
-
-Supersession rules:
-
-- This file supersedes all source handoffs for current state.
-- Kasm-specific facts were merged from its dedicated document and are no longer omitted from the general SSOT.
-- Older documents remain useful as evidence of completed processes and historical decisions, not as current state.
-- The source documents were removed from `_inbox/` after consolidation; this file is the sole canonical record.
-
-### 19.1 Claim-level conflict register
-
-| Claim                                               | Conflicting or supporting sources                                                     | Controlling evidence                                                             | Current status              | Required AI behavior                                                 |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------- |
-| Nextcloud maintenance/repair/quota complete         | Older 2026-09-09/13 masters vs failed 2026-09-12 backup attempt                       | Fresh `occ status`, config read-back, repair output                              | `CONFLICT`                  | Do not repeat or assume completion                                   |
-| Nextcloud backup complete                           | Older handoffs vs later missing artifact chain                                        | Snapshot listing, repository check, restore                                      | `CONFLICT`                  | Treat as unverified                                                  |
-| n8n owner and backup complete                       | 2026-09-09 progress handoff vs v2.2 pending register                                  | Current account check, dump, snapshot, restore                                   | `CONFLICT`                  | Do not claim operational acceptance                                  |
-| Kasm public route works                             | Kasm SSOT dated 2026-09-16                                                            | Caddy-to-Kasm and local hostname HTTP 200 tests                                  | `CONFIRMED`, evidence dated | Preserve upstream and TLS exception                                  |
-| TCP 8443 is acceptable exposure                     | Kasm requires host endpoint vs UFW/listener ambiguity                                 | Live bind, Docker mapping, UFW behavior, recovery path                           | `CONFLICT`                  | Do not open/close blindly                                            |
-| UDP 443 is allowed                                  | Caddy supports UDP 443 vs older UFW matrix omitted it                                 | Live UFW and UDP listener checks                                                 | `UNKNOWN`                   | Verify QUIC policy                                                   |
-| OmniRoute is operational                            | Docker health/model test vs dashboard reconnecting banner                             | Internal `/healthz`, dashboard API/WebSocket test                                | `CONFLICT`                  | Do not equate container health with app acceptance                   |
-| Zero Trust is enabled for the three public services | Older source documents marked Access deferred; owner confirmed current implementation | Cloudflare dashboard policy export plus unauthenticated/authorized service tests | `OWNER-CONFIRMED`           | Treat protection as enabled; do not infer policy details or bypasses |
-| AI privacy boundary is enforced                     | Ollama removal makes all OmniRoute requests provider-bound                           | Auth, route defaults, client network policy, and data-classification evidence    | `PENDING`                   | Never send secrets; require deliberate approval for private data     |
-| WireGuard migration complete                        | Replacement peers staged vs no documented final device handshakes                     | Per-device handshake and exit-IP evidence                                        | `PENDING`                   | Do not remove old peers                                              |
-| All persistent services are recoverable             | Pre-AI Restic/R2 tests vs later services                                              | Current path listing and application restore drills                              | `PENDING`                   | Do not claim disaster recovery readiness                             |
-
-For every future conflict, add a row here before changing the dashboard or task register. A conflict is resolved only by fresh evidence, not by choosing the newest prose document.
-
----
-
-## 20. Change Record
-
-|       Date | Change                                             | Evidence                                                                | Result / follow-up                                             |
-| ---------: | -------------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------- |
-| 2026-09-17 | Consolidated 13 substantive source documents       | Local `_inbox` review; v2.2 primary plus Kasm SSOT                      | This document became canonical v3.0                            |
-| 2026-09-17 | Added Kasm to general service topology             | Kasm SSOT, last verified 2026-09-16                                     | Public route and admin login recorded; backup coverage pending |
-| 2026-09-17 | Preserved unresolved exposure discrepancy          | v2.2 listener observation vs UFW expected ports                         | Map 3389/8443/4317/8125 before changing firewall               |
-| 2026-09-17 | Preserved Nextcloud maintenance/backup uncertainty | Failed 2026-09-12 backup attempt and conflicting later claims           | Check `occ status` before further work                         |
-| 2026-09-17 | Preserved OmniRoute dashboard issue                | Live container health vs reconnecting dashboard                         | Run internal health/API/WebSocket diagnosis                    |
-| 2026-09-17 | Preserved backup scope gap                         | Baseline predates later n8n/AI/Kasm additions                           | Verify coverage and restore for every persistent service       |
-| 2026-09-17 | Established AI anti-hallucination contract         | Consolidation policy                                                    | Use evidence labels and required response format               |
-| 2026-09-17 | Updated canonical state to v3.1                    | Owner confirmation of Cloudflare Zero Trust on n8n, Nextcloud, and Kasm | Record policy details; test webhooks and non-browser clients   |
-| 2026-09-17 | Consolidated OmniRoute/n8n stage record             | Live `omni_clients` membership, DNS/TCP test, n8n model execution, and Ollama removal | n8n route confirmed; other client migrations and provider-bound privacy controls remain pending |
-| 2026-09-18 | Refined canonical state and consumed local inbox    | Compared the two substantive inbox sources and README; corrected stale OmniRoute path status and provenance | VPS_STATE.md remains the only operational source |
-| 2026-09-19 | Deployed Vaultwarden and verified post-rotation R2 backup | Vaultwarden startup/public-route tests; Restic snapshot `fdbdc472` at 08:47:28 including `/srv/stack` | Public service operational; signup remains temporarily enabled; restore test deferred |
+| Date | Change | Evidence | Result/follow-up |
+|---|---|---|---|
+| 2026-09-17 | Established canonical SSOT and anti-hallucination contract | Consolidation of source documents | This file remains operational authority |
+| 2026-09-17 | Implemented `omni_clients` AI bridge and removed Ollama | Live network/model evidence | n8n route confirmed; privacy/application acceptance pending |
+| 2026-09-17 | Owner confirmed Cloudflare Zero Trust for n8n, Nextcloud, and Kasm | Owner statement | Protection treated as enabled; exact policy tests pending |
+| 2026-09-19 | Deployed Vaultwarden and verified post-rotation R2 snapshot | Public route, health, snapshot `fdbdc472` including `/srv/stack` | Service operational; signup and restore remain pending/deferred |
+| 2026-09-19 | Corrected evidence directory location | `/root` attempt failed; user-owned evidence directory created | No production state changed by failed attempt |
+| 2026-09-19 | Verified Nextcloud application and repair state | Live `occ` evidence at 15:18–15:23 UTC | Version 34.0.3.2; maintenance off; repair complete; no DB upgrade pending; quota 180 GB |
+| 2026-09-19 | Verified Nextcloud services and Access enforcement | Docker/Compose and HTTP 302 Access results around 15:21 UTC | Containers running; MariaDB healthy; unauthenticated Access protection confirmed |
+| 2026-09-19 | Reconciled UFW, listeners, Docker mappings, and service inventory | Evidence directory `/home/leo/vps-reconcile-20260919T152813Z` | 8443 maps to Kasm proxy; 3389 maps to Kasm RDP gateway; 4317/8125/19999 loopback-only; OmniRoute private |
+| 2026-09-19 | Reconciled WireGuard peer handshakes | `wg show wg0 latest-handshakes` and transfer output | Old `.2` and `.6` active; replacements `.7`–`.11` inactive; migration remains pending |
+| 2026-09-19 | Confirmed Kasm runtime health and intended route | Kasm terminal evidence, health checks, heartbeats, administrator activity, owner route statement | Runtime and browser route confirmed; backup/recovery pending |
+| 2026-09-19 | Recorded Kasm token-bearing log exposure | `kasem-update-terminal.txt` contains token material | Treat affected material as exposed; rotate and remove/redact artifact |
+| 2026-09-19 | Confirmed historical `ai_clients` network still exists | Live Docker network inventory | Membership requires verification; do not delete blindly |
+| 2026-09-19 | Confirmed current image inventory includes mutable tags | Live Docker inventory and image digests | Record current/rollback digests; immutable Compose pinning remains pending |
 
 ### Future entry format
 
@@ -1215,181 +977,56 @@ For every future conflict, add a row here before changing the dashboard or task 
 | YYYY-MM-DD | Material change | Command/test/source evidence | Result, residual risk, and rollback |
 ```
 
-Every future update must also revise the affected dashboard row, task checkbox, evidence date, and source provenance where relevant.
+---
+
+## 18. Recovery rules
+
+- Never delete Docker named volumes during troubleshooting.
+- Never restore against a live production database without an approved restore plan.
+- Stop the affected application before database restore.
+- Preserve the exact n8n encryption key for credential decryption.
+- Confirm target and destination before every restore.
+- Keep console/SSH recovery available before firewall or origin hardening.
+- Keep Cloudflare Full (strict) and Origin CA paths aligned.
+- Do not rotate keys, certificates, VPN profiles, or secrets without a tested migration/rollback.
+- Treat Kasm token-bearing logs as compromised until rotation is complete.
+- Do not remove old WireGuard peers until replacement handshakes and exit IPs are proven.
+- Do not claim disaster recovery readiness until current service restore drills pass.
 
 ---
 
-## 21. Vaultwarden Deployment and Operations
+## 19. Final operational position
 
-### 21.1 Deployment status
-
-Evidence date: 2026-09-19. Vaultwarden `1.37.3` is deployed and reported healthy. The image is pinned by digest in the live Compose file; the exact digest still needs to be recorded here. The public hostname is `vault.trisektor.org`.
-
-| Check | Result |
-|---|---|
-| HTTPS route | `PASSED`: HTTP/2 200 through Cloudflare/Caddy |
-| Health endpoint | `PASSED`: `https://vault.trisektor.org/alive` returned HTTP/2 200 |
-| HTTP redirect | `PASSED`: HTTP returned 301 to HTTPS |
-| Cloudflare Access | Not applied during initial deployment; public test did not redirect to Access login |
-| Public registration | Enabled temporarily for onboarding; disable after client and account checks |
-| Backup inclusion | Confirmed through the existing R2 script's `/srv/stack` scope |
-| Restore test | `DEFERRED` by owner; do not call Vaultwarden recovery-tested |
-
-The service is publicly operational and backup inclusion is verified, but recovery has not been restore-tested.
-
-### 21.2 Host evidence and capacity
-
-The live pre-install inventory on 2026-09-19 recorded Debian GNU/Linux 13.7 (Trixie), kernel `6.12.107+deb13-amd64`, 8 vCPUs, approximately 15 GiB visible RAM with approximately 9.8 GiB available, approximately 503 GiB root filesystem with approximately 433 GiB available, Docker Engine `29.8.1`, Docker Compose `v5.5.1`, and approximately 4 GiB swap. Capacity was adequate for six family members; recheck before major additions.
-
-### 21.3 Filesystem and Compose topology
-
-Project directory and persistent data:
+As of the 2026-09-19 reconciliation:
 
 ```text
-/srv/stack/vaultwarden/
-├── compose.yml
-├── .env
-├── .env.save                 # historical editor backup; do not rely on blindly
-└── data/
-
-Persistent application data: /srv/stack/vaultwarden/data
-Compose project: vaultwarden
-Service: vaultwarden
-Generated container: vaultwarden-vaultwarden-1
-Networks: proxy, vaultwarden_default
+Nextcloud application and repair state: RESOLVED
+Nextcloud quota and recent background jobs: RESOLVED/CONFIRMED
+Nextcloud unauthenticated Cloudflare Access protection: CONFIRMED
+Kasm route and runtime health: CONFIRMED
+Kasm browser endpoint: desktop.trisektor.org
+Kasm Cloudflare Zero Trust protection: OWNER-CONFIRMED
+Kasm TCP 8443 ownership: CONFIRMED
+Kasm TCP 3389 ownership: CONFIRMED
+Kasm TCP 3389 security acceptance: PENDING
+Kasm token-bearing log exposure: FAILED — ROTATION REQUIRED
+Telemetry listener ownership/bindings: CONFIRMED LOOPBACK-ONLY
+OmniRoute private host binding: CONFIRMED
+OmniRoute application/dashboard acceptance: PENDING
+Fresh R2 snapshot after credential rotation: CONFIRMED
+Current all-service backup coverage: PENDING
+Repository integrity and restore drills: PENDING
+n8n dump/key/owner/restore acceptance: PENDING
+WireGuard replacement migration: PENDING
+AI privacy enforcement: PENDING
+Cloudflare policy export/authorized tests: PENDING
+VS Code/Open WebUI/Claude acceptance: PENDING
+Vaultwarden onboarding/2FA/registration lock-down: PENDING
+Image pinning and rollback records: PENDING
+SSH/Docker isolation and monitoring alerting: PENDING
+Disaster-recovery readiness: NOT CLAIMED
 ```
 
-The `proxy` network is the existing external reverse-proxy network. `vaultwarden_default` is the private Compose network. Do not attach Vaultwarden to AI, development, n8n, Nextcloud, Kasm, or other unrelated networks. Use the Compose project and service name rather than relying on the generated container name.
+The VPS is operational, but it is not yet accepted as ready for unattended production change or enterprise-grade disaster recovery. The fastest safe path is to remediate the Kasm token exposure, make a deliberate decision on direct TCP 3389, verify current backup coverage and restores, complete WireGuard migration, and close application-level acceptance gaps one stack at a time.
 
-The intended structure is an immutable Vaultwarden image digest, `restart: unless-stopped`, `env_file: .env`, `./data:/data`, `default` and external `proxy` networks, `expose: "80"`, and `no-new-privileges:true`. The live Compose file is authoritative; inspect and validate it before changes.
-
-Vaultwarden publishes no host ports. It serves internal `80/tcp` only, and Caddy owns public host ports 80/443. Do not add a `ports:` mapping for 80, 443, 3012, or any alternate host port. No UFW rule is required for Vaultwarden.
-
-Expected protection is mode 0750 for the project and data directories, 0600 for `.env`, and 0640 for `compose.yml`. Never display `.env`, the database, RSA private keys, or files under `data/` in chat, screenshots, shell output, Git, or documentation.
-
-### 21.4 Caddy and Cloudflare route
-
-Caddy remains at `/srv/stack/caddy`, using `/srv/stack/caddy/compose.yml`, `/srv/stack/caddy/Caddyfile`, container `caddy`, and the `proxy` network. The route is:
-
-```caddyfile
-http://vault.trisektor.org {
-  redir https://vault.trisektor.org{uri} permanent
-}
-
-https://vault.trisektor.org {
-  tls /etc/caddy/origin-certs/cloudflare-origin.crt /etc/caddy/origin-certs/cloudflare-origin.key
-  header Strict-Transport-Security "max-age=15552000"
-
-  reverse_proxy vaultwarden:80 {
-    header_up X-Real-IP {http.request.header.CF-Connecting-IP}
-  }
-}
-```
-
-Cloudflare deployment settings are DNS `vault.trisektor.org` pointing to the VPS, proxied, SSL/TLS Full (strict), and WebSockets enabled. The Origin CA certificate must cover `vault.trisektor.org` or `*.trisektor.org`. Cloudflare Access was not applied initially because Bitwarden clients must be tested without that extra layer; do not automatically copy the Access policy used by the other public services.
-
-Operate Caddy from its own project directory. Back up the Caddyfile before editing, validate before reload, and reload only after successful validation:
-
-```bash
-cd /srv/stack/caddy
-sudo docker compose ps
-sudo docker compose exec -T caddy caddy validate --config /etc/caddy/Caddyfile
-sudo docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
-```
-
-Do not run Caddy Compose commands from the Vaultwarden directory, run `caddy fmt --overwrite` blindly, or recreate/stop the Caddy stack for a normal route change.
-
-### 21.5 Environment and secret boundary
-
-The documented non-secret settings are:
-
-```dotenv
-DOMAIN=https://vault.trisektor.org
-TZ=Asia/Karachi
-SIGNUPS_ALLOWED=true
-INVITATIONS_ALLOWED=true
-SHOW_PASSWORD_HINT=false
-```
-
-The admin token must be an Argon2id hash, never a raw password. Generate and enter secrets interactively on the VPS or in the provider dashboard. Do not store Vaultwarden passwords, Argon2id hashes, R2 keys, Restic passwords, Cloudflare tokens, SMTP credentials, Docker environment dumps, Origin CA private keys, WireGuard profiles, or recovery codes in this SSOT, chat, Git, logs, or prompts.
-
-### 21.6 Backup evidence and operating procedure
-
-The existing backup script is `/usr/local/sbin/stack-backup-r2`, using `/etc/stack-secrets/restic-r2.env`, `/etc/stack-secrets/restic-password.txt`, lock `/run/stack-backup-r2.lock`, and log `/var/log/stack-backup-r2.log`. It backs up `/srv/stack`, `/etc/stack-secrets`, and `/home/leo`; Vaultwarden is covered through `/srv/stack`.
-
-The confirmed R2 bucket is `cupnet-leo1`, with repository:
-
-```text
-s3:https://f0273d79d418258f9239d057efa8c460.r2.cloudflarestorage.com/cupnet-leo1
-```
-
-The previous R2 API credentials were rotated after accidental exposure. Replacement credentials were entered interactively and are not recorded here. After rotation, the repository opened successfully, Restic listed snapshot `fdbdc472` at `2026-09-19 08:47:28`, the snapshot included `/srv/stack`, and a fresh backup was tested and verified. No Docker, Caddy, Vaultwarden, UFW, or other application service was restarted for the credential rotation.
-
-Current interpretation:
-
-```text
-Backup scope: verified
-Fresh backup after R2 API-token rotation: verified
-Restore test: deferred by owner
-Recovery-tested status: not claimed
-```
-
-For normal backups, first check for an active process and lock holder, then run only the existing script when no backup is active. Never remove a lock held by a process or reconstruct competing Restic commands. Do not expose environment files or passwords.
-
-### 21.7 Onboarding and registration lock-down
-
-`SIGNUPS_ALLOWED=true` is intentional until all of the following are complete: fresh backup confirmation, owner web-vault test, browser-extension test, mobile-client test, desktop-client test if used, creation of the six-family-member target accounts, invitation/synchronization tests, and 2FA for each account. Never record names, email addresses, passwords, or recovery codes here.
-
-After onboarding and client checks, disable public registration in the protected `.env`, recreate only the Vaultwarden Compose service as required, verify `SIGNUPS_ALLOWED=false`, and test from a private browser session that new registration is unavailable. Keep invitations enabled only as long as needed.
-
-### 21.8 Verification and rollback
-
-Useful checks, without printing secrets:
-
-```bash
-cd /srv/stack/vaultwarden
-sudo docker compose -p vaultwarden ps
-sudo docker compose -p vaultwarden logs --tail 100
-docker ps --format 'table {{.Names}}\t{{.Ports}}\t{{.Networks}}' | grep -i vaultwarden
-sudo ss -lntup
-dig +short vault.trisektor.org
-curl -sS -D - -o /dev/null https://vault.trisektor.org
-curl -fsS -D - https://vault.trisektor.org/alive -o /dev/null
-curl -sS -D - -o /dev/null http://vault.trisektor.org
-```
-
-Expected results are a healthy container, internal `80/tcp` only, HTTPS 200, `/alive` 200, HTTP 301, and no 502/503/504 or unexpected Cloudflare Access redirect.
-
-Before a Caddy change, create a timestamped Caddyfile copy. To roll back, restore the verified pre-change copy, validate it, and reload Caddy. To stop Vaultwarden only, run `sudo docker compose -p vaultwarden down` from its project directory; this preserves bind-mounted data. Never delete `/srv/stack/vaultwarden/data`, run Docker prune commands, or remove production volumes during troubleshooting.
-
-### 21.9 Vaultwarden outstanding tasks
-
-| Priority | Task | Status |
-|---:|---|---|
-| 1 | Monitor the next scheduled R2 backup using rotated credentials | Verified; monitoring pending |
-| 2 | Onboard five additional family members toward the six-account target | Pending |
-| 3 | Test web, browser extension, mobile, and desktop clients | Pending |
-| 4 | Enable 2FA and store recovery codes offline | Pending |
-| 5 | Disable public registration after onboarding and client checks | Pending / blocking |
-| 6 | Perform a non-destructive R2 restore test | Deferred by owner |
-| 7 | Record the exact Vaultwarden image digest | Pending |
-| 8 | Add Vaultwarden and backup-failure monitoring | Pending |
-| 9 | Revisit `/admin` restriction through WireGuard or equivalent | Deferred until client compatibility and access design are settled |
-
-## 22. Final Operational Position
-
-The VPS is a functioning multi-service Docker platform with public Cloudflare/Caddy routes for Nextcloud, n8n, and Kasm; private gateway-based AI services through OmniRoute; WireGuard; and an established but now incomplete backup baseline. Ollama has been removed, so OmniRoute requests are provider-bound unless separately approved by data classification and provider policy. The platform must not be treated as enterprise-ready for unattended change until the following are closed:
-
-1. Unexpected host listeners are mapped and intentionally controlled.
-2. Nextcloud maintenance mode and application health are live-verified.
-3. n8n dumps, encryption-key recovery, and restore are tested.
-4. Current backups include n8n, AI, Kasm, WireGuard, secrets, and persistent volumes.
-5. OmniRoute dashboard and internal health behavior are diagnosed.
-6. VS Code/Open WebUI/Claude authentication acceptance is complete.
-7. WireGuard migration is completed safely.
-8. Vaultwarden onboarding is complete, public registration is disabled, and client compatibility is recorded.
-9. Image pinning, rollback, SSH hardening, and monitoring alerting are implemented with recovery paths.
-
-Until then, use this document for informed planning and controlled maintenance, not for autonomous production changes.
-
-**End of canonical SSOT.**
+**End of updated SSOT.**
