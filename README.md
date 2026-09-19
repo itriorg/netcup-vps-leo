@@ -2,7 +2,7 @@
 
 Private, portable operational context for the netcup VPS named `leo`.
 
-The repository's final state document is [`VPS_STATE.md`](VPS_STATE.md), currently consolidated as version 3.1 on 2026-09-17. It is intended for approved operators and AI clients that need the documented VPS context.
+The repository's final state document is [`VPS_STATE.md`](VPS_STATE.md), currently consolidated as version 3.3 on 2026-09-19. It includes the latest documented Vaultwarden deployment and remains intended for approved operators and AI clients that need the documented VPS context.
 
 ## Canonical state
 
@@ -14,7 +14,7 @@ Review the document's classification and remove any infrastructure details that 
 
 ## Refresh
 
-From a trusted machine with an existing SSH configuration:
+From a trusted machine with an existing, reachable SSH configuration:
 
 ```bash
 VPS_SSH_TARGET=leo ./scripts/update-vps-state.sh
@@ -22,14 +22,16 @@ VPS_SSH_TARGET=leo ./scripts/update-vps-state.sh
 
 The script collects a bounded, redacted inventory over SSH. It does not read environment variables, shell history, credentials, private keys, or application files. Review the diff before committing or sharing the refreshed Markdown file.
 
+The refresh is read-only on the VPS and updates only the local `VPS_STATE.md`. It requires a working SSH alias; this workspace cannot refresh the file while the configured target is unresolved.
+
 ## AI workflow
 
 1. Open `VPS_STATE.md` in the AI client.
 2. Ask the client to treat it as authoritative context.
 3. Ask for a plan and verification steps before any change.
 4. Refresh the file after approved infrastructure changes.
-5. Commit the Markdown update with a short change description.
+5. Review the diff and commit the Markdown update with a short change description when the repository remote and branch policy are configured.
 
 ## Safety boundary
 
-This repository is documentation and state context, not an automation channel. The snapshot script is read-only on the VPS. Destructive, production, authentication, firewall, DNS, backup, and secret-related changes require explicit review and execution outside this repository.
+This repository is documentation and state context, not an automation channel. The snapshot script is read-only on the VPS. Destructive, production, authentication, firewall, DNS, backup, and secret-related changes require explicit review and execution outside this repository. Do not treat a local documentation update as proof that the VPS or a hosted Git copy has been updated.
