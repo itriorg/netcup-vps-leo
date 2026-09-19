@@ -12,6 +12,20 @@ The file contains operational facts and decision rules, but must never contain s
 
 Review the document's classification and remove any infrastructure details that should not be shared before changing the repository's visibility or distributing its contents.
 
+## Repository boundary
+
+`netcup-vps-leo/` is a standalone Git repository nested inside the larger workspace. Its GitHub remote, branch, history, and working tree are managed from this directory, not from the workspace root.
+
+Use these commands from the workspace root:
+
+```bash
+git -C netcup-vps-leo status
+git -C netcup-vps-leo pull --ff-only origin main
+git -C netcup-vps-leo push origin main
+```
+
+Do not use root-level `git add`, `git commit`, `git pull`, or `git push` for this repository. The parent workspace intentionally ignores this directory to keep the two repositories separate.
+
 ## Refresh
 
 From a trusted machine with an existing, reachable SSH configuration:
