@@ -2,7 +2,7 @@
 
 Private, portable operational context for the netcup VPS named `leo`.
 
-The repository's final state document is [`VPS_STATE.md`](VPS_STATE.md), currently consolidated as version 3.3 on 2026-09-19. It includes the latest documented Vaultwarden deployment and remains intended for approved operators and AI clients that need the documented VPS context.
+The repository's final state document is [`VPS_STATE.md`](VPS_STATE.md), currently consolidated as version 3.6-agent-reference on 2026-09-22. It includes the documented Vaultwarden and OpenClaw deployments and remains intended for approved operators and AI clients that need the documented VPS context.
 
 ## Canonical state
 
@@ -11,6 +11,8 @@ The repository's final state document is [`VPS_STATE.md`](VPS_STATE.md), current
 The file contains operational facts and decision rules, but must never contain secrets. Unknown facts remain explicitly marked `UNKNOWN`.
 
 Review the document's classification and remove any infrastructure details that should not be shared before changing the repository's visibility or distributing its contents.
+
+OpenClaw deployment details are consolidated in Section 9.6 of `VPS_STATE.md`. The Gateway is recorded as healthy with no host-published port and an environment-backed OmniRoute configuration; backup/restore, sandbox, isolation, and inference acceptance remain explicitly pending.
 
 ## Repository boundary
 
