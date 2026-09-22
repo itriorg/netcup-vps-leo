@@ -3,15 +3,28 @@
 ## Enterprise Operational Single Source of Truth
 
 **Document status:** Updated reconciliation baseline  
-**Document version:** 3.4-reconciliation  
-**Last updated:** 2026-09-19  
-**Primary evidence cutoff:** 2026-09-19, including live VPS reconciliation, Nextcloud repair verification, Kasm terminal evidence, and Vaultwarden deployment evidence  
+**Document version:** 3.6-agent-reference
+**Last updated:** 2026-09-22
+**Primary evidence cutoff:** 2026-09-21, including live VPS reconciliation, Nextcloud repair verification, Kasm terminal evidence, Vaultwarden deployment evidence, and the OpenClaw deployment SSOT
 **Owner:** Leo  
 **Provider:** netcup / Cupnet  
 **Classification:** Private internal operations document  
 **Canonical file:** `VPS_STATE.md`
 
-> This document consolidates the prior SSOT and the fresh verification evidence supplied during the 2026-09-19 reconciliation session. It is the operational authority for AI clients and operators. Do not create parallel handoff files. Update this file and its Change Record after every material change.
+> This document consolidates the prior SSOT, the 2026-09-19 reconciliation, and the 2026-09-21 OpenClaw deployment evidence. It is the operational authority for AI clients and operators. Do not create parallel handoff files. Update this file and its Change Record after every material change.
+
+### 0.0 Agent navigation map
+
+Use this routing order when answering operational questions:
+
+1. Current facts and service status: **Sections 1-6** and the **single-file verification tracker** in Section 0.5.
+2. Service-specific evidence and safe commands: **Sections 7-13**; OpenClaw is in **Section 9.6**.
+3. Cross-service risks and unresolved claims: **Sections 14-15**.
+4. Pending work: **Section 16**, which is the task register.
+5. Material changes and evidence lineage: **Section 17**, the Change Record.
+6. Recovery constraints: **Section 18**; final qualified position: **Section 19**.
+
+The dashboard is a summary, not proof. For any risky action, follow the authority order below and inspect the service-specific evidence, conflict register, and task register before proposing a change.
 
 ---
 
@@ -89,6 +102,8 @@ Status labels:
 | Kasm port exposure / RDP decision | `P` | N/A | Direct 3389 must be resolved |
 | Kasm backup / restore | `P` | N/A | Not yet proven |
 | OmniRoute runtime | `LV` | Live evidence | Container/runtime confirmed |
+| OpenClaw runtime and OmniRoute model-list path | `P` | OpenClaw deployment SSOT | See Section 9.6; healthy Gateway and model-list path recorded on 2026-09-21; independent live recheck pending |
+| OpenClaw backup / restore / sandbox / inference | `P` | N/A | Not proven by deployment evidence |
 | OmniRoute dashboard / API / WebSocket | `P` | N/A | Acceptance incomplete |
 | WireGuard migration | `P` | N/A | Old peers must not be removed yet |
 | Vaultwarden route / service | `LV` | Live evidence | Startup and route confirmed |
@@ -124,6 +139,7 @@ The following remain unresolved or require controlled remediation:
 - n8n owner account, dump, independent encryption-key recovery, and isolated restore are not fully proven.
 - WireGuard replacement peers have no documented handshakes; old peers must not be removed.
 - OmniRoute application-level dashboard/API/WebSocket acceptance remains incomplete despite container health and n8n model execution.
+- OpenClaw is deployed and healthy, but its backup/restore, sandbox, isolation, and inference acceptance remain incomplete.
 - AI network membership and privacy-boundary enforcement require verification.
 - Open WebUI, VS Code Server, and Claude CLI acceptance remains incomplete.
 - Vaultwarden onboarding, 2FA, registration lock-down, and restore remain incomplete.
@@ -148,6 +164,7 @@ The following remain unresolved or require controlled remediation:
 | Telemetry 4317/8125/19999 | OTEL and Netdata listeners are loopback-only | 2026-09-19 | `CONFIRMED` loopback mapping | Do not expose; document ownership |
 | Ollama | Removed; no approved local model route | 2026-09-17 | `CONFIRMED` | Do not recreate without architecture decision |
 | OmniRoute | Healthy container; `omni_clients` and `ai_egress`; no host port; n8n model execution previously succeeded | 2026-09-19 | `CONFIRMED` container/routing; `PENDING` app acceptance | Test `/healthz`, dashboard API, WebSocket, and privacy boundary |
+| OpenClaw | See Section 9.6. Source tag `v2026.9.5`, commit `ec9c1a13db8938e5a3eaa51fca2e981cde2395a9`; local image; Gateway container healthy; no host port; attached to `openclaw_internal` and `ai_egress`; default `omniroute/leo-one-free` | 2026-09-21 | `RECORDED` deployment evidence; `PENDING` recovery/security acceptance | Verify backup inclusion, restore, sandbox/isolation, and approved inference test |
 | Open WebUI | Running and healthy; final network/auth/route acceptance not fully evidenced | 2026-09-19 | `PENDING` | Verify final network membership, authentication, and OmniRoute route |
 | VS Code Server | Running privately; image uses floating `latest`; authentication acceptance incomplete | 2026-09-19 | `PENDING` | Enable/test authentication and verify network/mount boundary |
 | Claude CLI | Gateway path recorded; provider authentication previously returned 401 | 2026-09-17 | `PENDING` | Resolve credentials through approved secret mechanism and harmless test |
@@ -300,6 +317,7 @@ Live network inventory showed:
 | `kasm_default_network` | `172.24.0.0/16` | Bridge | Kasm services |
 | `kasm_sidecar_network` | `172.25.0.0/16` | Kasm sidecar network | Kasm sidecars |
 | `omni_clients` | `172.26.0.0/16` | `Internal true` | Approved client-to-OmniRoute bridge |
+| `openclaw_internal` | Subnet not recorded in OpenClaw deployment evidence | Private Compose network | OpenClaw Gateway project network |
 | `host` | Host | Host mode | Docker standard network |
 | `bridge` | `172.17.0.0/16` | Default bridge | Docker standard network |
 
@@ -611,6 +629,101 @@ Still pending:
 
 Do not claim Kasm recoverability from healthy containers or HTTP 200 health checks.
 
+### 9.6 OpenClaw
+
+OpenClaw deployment evidence is recorded from the final deployment SSOT dated `2026-09-21`. The deployment is operationally running, but backup/restore, sandbox, isolation, and inference acceptance are not yet proven.
+
+#### Deployment identity and layout
+
+| Item | Value | Status |
+|---|---|---|
+| Project directory | `/srv/openclaw` | `RECORDED` |
+| Compose file | `/srv/openclaw/compose.yml` | `RECORDED` |
+| Source checkout | `/srv/openclaw/source` | `RECORDED` |
+| Source repository | `https://github.com/openclaw/openclaw.git` | `RECORDED` |
+| Source tag | `v2026.9.5` | `RECORDED` |
+| Source commit | `ec9c1a13db8938e5a3eaa51fca2e981cde2395a9` | `RECORDED` |
+| Image | `openclaw:local` | `RECORDED` |
+| Image ID | `sha256:4b29d0c9c4c00cab15024799b9d3a08f514b883c94cdfb58e3df7c7535ea2fa0` | `RECORDED` |
+| Compose service | `openclaw-gateway` | `RECORDED` |
+| Running container | `openclaw-openclaw-gateway-1` | `RECORDED` |
+| Gateway version | `2026.9.5` | `RECORDED` |
+| Internal listener | TCP `18789` | `RECORDED` |
+| Host-published ports | None; `docker port` returned no output | `RECORDED` |
+| Project networks | `openclaw_internal` and external `ai_egress` | `RECORDED` |
+| Time zone | `Asia/Karachi` | `RECORDED` |
+| Gateway authentication | Token configured in protected environment file; value not recorded | `RECORDED` |
+
+The project state directories are `/srv/openclaw/config`, `/srv/openclaw/workspace`, `/srv/openclaw/data`, `/srv/openclaw/logs`, and `/srv/openclaw/backups`. The recorded source and configuration files also include `/srv/openclaw/.env`, `config/openclaw.json`, its `.bak` files, `config/state/openclaw.sqlite`, and the generated workspace files. The `.env` file is recorded as mode `0600`, owned by `leo:leo`; never copy or print its values.
+
+#### Compose and runtime controls
+
+Recorded Compose controls:
+
+- Build context is `/srv/openclaw/source`; the image build succeeded.
+- `openclaw_internal` is a private Compose network; its subnet was not recorded and must not be inferred.
+- `ai_egress` is an existing external Docker network used to reach OmniRoute.
+- No `ports:` mappings exist for Gateway ports `18789`, `18790`, or `3978`.
+- `NET_RAW` and `NET_ADMIN` are dropped.
+- `no-new-privileges:true` is enabled.
+- Restart policy is `unless-stopped`.
+- A Gateway healthcheck is configured.
+- No Docker socket mount, broad host filesystem mount, persistent CLI service, messaging channel, browser automation, Caddy route, Cloudflare route, or OpenClaw-specific UFW rule is recorded.
+- Systemd installation was skipped because systemd user services were unavailable inside the container.
+- Onboarding used one agent named `main`, initial access posture `Ask first`, manual AI access discovery, telemetry declined, and model/provider setup skipped initially before OmniRoute was added.
+
+The Gateway was recorded as running and healthy, with `[gateway] ready` and `[heartbeat] started`. The internal diagnostic reported `bind=loopback (127.0.0.1)`, probe target `ws://127.0.0.1:18789`, connectivity `ok`, and `Listening: *:18789`. The authoritative host-exposure check is the separate empty `docker port` result; the internal listener diagnostic must not be treated as public host exposure.
+
+#### OmniRoute integration
+
+OpenClaw uses the existing private OmniRoute path:
+
+```text
+Provider: omniroute
+Adapter: openai-completions
+Endpoint: http://omniroute:20128/v1
+Model: leo-one-free
+Default route: omniroute/leo-one-free
+```
+
+The provider key is environment-backed through the configured provider field and is redacted in status output. No key value or redacted fragment belongs in this document. Private-network access is configured at the accepted nested path:
+
+```text
+models.providers.omniroute.request.allowPrivateNetwork=true
+```
+
+The recorded test from inside the Gateway returned a successful model-list response, confirming Docker reachability, endpoint response, and acceptance of the environment-backed key for that request. It does not prove successful inference, every model, or approval for sensitive data. Treat all OmniRoute requests as provider-bound and apply the existing privacy rules.
+
+#### Operational checks
+
+Run from the VPS without printing secrets:
+
+```bash
+cd /srv/openclaw
+docker compose -f compose.yml config --quiet
+docker compose -f compose.yml ps
+docker compose -f compose.yml exec openclaw-gateway \
+  node dist/index.js gateway health
+docker compose -f compose.yml exec openclaw-gateway \
+  node dist/index.js models status
+docker port openclaw-openclaw-gateway-1
+```
+
+Expected recorded results are a healthy Gateway, `Gateway Health / OK`, default model `omniroute/leo-one-free`, and no output from `docker port`. Review logs only after checking for tokens, keys, cookies, prompts, private paths, and provider secrets.
+
+For a current network observation, use Docker network names rather than persisting container IPs:
+
+```bash
+docker inspect openclaw-openclaw-gateway-1 \
+  --format '{{range $name, $network := .NetworkSettings.Networks}}{{println $name $network.IPAddress}}{{end}}'
+```
+
+#### Recovery and pending acceptance
+
+To stop OpenClaw while retaining state, run `docker compose -f /srv/openclaw/compose.yml down`; never use `down -v` or delete `/srv/openclaw`. Restart only the Gateway after a validated change, then rerun Compose status, Gateway health, and model status. Configuration backups are `/srv/openclaw/config/openclaw.json.bak`, `.bak.1`, and `.bak.2`; preserve the current file and validate the intended backup before any rollback.
+
+The deployment evidence does not prove that `/srv/openclaw` is included in the approved R2 backup or that a restore succeeds. It also does not prove sandbox policy, agent/Docker isolation, model generation, or model-specific behavior. Add these to the recovery and security work queue before claiming full acceptance. The Docker-group membership of `leo` remains root-equivalent and is not agent isolation; `allowPrivateNetwork=true` expands network access and requires review if tools or channels are added.
+
 ---
 
 ## 10. OmniRoute, Open WebUI, VS Code, and Claude CLI
@@ -855,7 +968,6 @@ Remediate by supported rotation/re-registration. Do not copy values into this do
 
 ## 15. Claim-level conflict register
 
-```markdown
 | Claim | Conflicting or supporting sources | Controlling evidence | Current status | Required AI behavior |
 | --- | --- | --- | --- | --- |
 | Nextcloud maintenance mode cleared | Older 2026-09-09/13 completion claims vs failed 2026-09-12 backup attempt | Fresh `occ status` and maintenance read-back at 2026-09-19 15:18:27 UTC; post-repair status at approximately 15:23 UTC | `CONFIRMED` | May state that Nextcloud is not in maintenance mode |
@@ -886,7 +998,7 @@ Remediate by supported rotation/re-registration. Do not copy values into this do
 | Kasm token material remains uncompromised | Secret boundary vs uploaded token-bearing logs | `kasem-update-terminal.txt` contains token-bearing Kasm log lines | `FAILED — ROTATION REQUIRED` | Rotate affected material; never reproduce values |
 | Container images are immutably pinned | Local digests observed vs running floating tags | n8n, VS Code, Open WebUI, and rolling Kasm tags remain mutable in Compose/inventory | `PENDING` | Pin one stack at a time with rollback |
 | Vaultwarden recovery-tested | Healthy deployment and R2 inclusion vs owner-deferred restore | No Vaultwarden restore test | `DEFERRED` | Do not claim recovery-tested status |
-```
+| OpenClaw recovery/security accepted | Healthy Gateway and model-list test vs missing backup, restore, sandbox, isolation, and inference evidence | OpenClaw deployment SSOT dated 2026-09-21 | `PENDING` | Verify coverage, restore, policy, and approved inference before claiming acceptance |
 
 For every future conflict, add a row before changing the dashboard or task register. A conflict is resolved only by fresh evidence, not by choosing the newest prose document.
 
@@ -915,6 +1027,7 @@ For every future conflict, add a row before changing the dashboard or task regis
 - [ ] Complete Kasm isolated restore drill.
 - [ ] Verify `/etc/wireguard` backup coverage.
 - [ ] Verify current Kasm, AI, Open WebUI, VS Code, and workspace coverage.
+- [ ] Verify `/srv/openclaw` backup coverage and perform a representative restore test.
 
 ### High
 
@@ -930,6 +1043,7 @@ For every future conflict, add a row before changing the dashboard or task regis
 - [ ] Export/document Cloudflare Zero Trust policy structure and authorized tests.
 - [ ] Test Kasm authenticated browser sessions and WebSocket behavior after any 3389 decision.
 - [ ] Complete Vaultwarden onboarding, client tests, synchronization, 2FA, and registration lock-down.
+- [ ] Review OpenClaw sandbox/isolation policy and run an approved harmless inference test.
 
 ### Medium
 
@@ -970,6 +1084,8 @@ For every future conflict, add a row before changing the dashboard or task regis
 | 2026-09-19 | Recorded Kasm token-bearing log exposure | `kasem-update-terminal.txt` contains token material | Treat affected material as exposed; rotate and remove/redact artifact |
 | 2026-09-19 | Confirmed historical `ai_clients` network still exists | Live Docker network inventory | Membership requires verification; do not delete blindly |
 | 2026-09-19 | Confirmed current image inventory includes mutable tags | Live Docker inventory and image digests | Record current/rollback digests; immutable Compose pinning remains pending |
+| 2026-09-21 | Deployed OpenClaw from pinned tag `v2026.9.5` and configured OmniRoute integration | OpenClaw deployment SSOT; Gateway health, model status, model-list, and empty `docker port` evidence | Gateway recorded healthy with no host publication; backup/restore, sandbox, isolation, and inference acceptance remain pending |
+| 2026-09-22 | Revalidated SSOT structure and agent cross-references | Native conflict table, sequential section audit, evidence-date audit, and Markdown/error checks | Navigation map added; OpenClaw references aligned; no new service state claimed |
 
 ### Future entry format
 
@@ -997,7 +1113,7 @@ For every future conflict, add a row before changing the dashboard or task regis
 
 ## 19. Final operational position
 
-As of the 2026-09-19 reconciliation:
+As of the latest evidence cutoff, 2026-09-21:
 
 ```text
 Nextcloud application and repair state: RESOLVED
@@ -1013,6 +1129,9 @@ Kasm token-bearing log exposure: FAILED — ROTATION REQUIRED
 Telemetry listener ownership/bindings: CONFIRMED LOOPBACK-ONLY
 OmniRoute private host binding: CONFIRMED
 OmniRoute application/dashboard acceptance: PENDING
+OpenClaw Gateway runtime and model-list path: RECORDED HEALTHY
+OpenClaw host exposure: NONE RECORDED
+OpenClaw backup/restore/sandbox/isolation/inference acceptance: PENDING
 Fresh R2 snapshot after credential rotation: CONFIRMED
 Current all-service backup coverage: PENDING
 Repository integrity and restore drills: PENDING
