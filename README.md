@@ -2,7 +2,7 @@
 
 Private, portable operational context for the netcup VPS named `leo`.
 
-The repository's final state document is [`VPS_STATE.md`](VPS_STATE.md), currently consolidated as version 3.12-agent-reference on 2026-09-27. It includes the documented Vaultwarden, OpenClaw, and Hermes deployments and remains intended for approved operators and AI clients that need the documented VPS context.
+The repository's final state document is [`VPS_STATE.md`](VPS_STATE.md), currently consolidated as version 3.13-agent-reference on 2026-09-27. It includes the documented Vaultwarden, OpenClaw, and Hermes deployments and remains intended for approved operators and AI clients that need the documented VPS context.
 
 ## Canonical state
 
