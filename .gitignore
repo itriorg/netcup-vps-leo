@@ -1,5 +1,7 @@
 _inbox/*
 !_inbox/README.md
+!_inbox/leo-one-tunnels-recreation.md
+VPS_STATE.snapshot.md
 *.env
 *.key
 *.pem

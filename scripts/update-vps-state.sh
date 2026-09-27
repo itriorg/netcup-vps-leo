@@ -2,10 +2,17 @@
 set -euo pipefail
 
 TARGET="${VPS_SSH_TARGET:-}"
-OUTPUT="${VPS_STATE_FILE:-VPS_STATE.md}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+CANONICAL_STATE="$SCRIPT_DIR/VPS_STATE.md"
+OUTPUT="${VPS_STATE_FILE:-$SCRIPT_DIR/VPS_STATE.snapshot.md}"
 
 if [[ -z "$TARGET" ]]; then
   printf 'Usage: VPS_SSH_TARGET=<ssh-host-alias> %s\n' "$0" >&2
+  exit 2
+fi
+
+if [[ "${OUTPUT##*/}" == "VPS_STATE.md" ]] || { [[ -e "$OUTPUT" ]] && [[ -e "$CANONICAL_STATE" ]] && [[ "$OUTPUT" -ef "$CANONICAL_STATE" ]]; }; then
+  printf 'Refusing to overwrite the curated SSOT. Choose a separate VPS_STATE_FILE snapshot path.\n' >&2
   exit 2
 fi
 
@@ -94,6 +101,6 @@ mkdir -p "$(dirname "$OUTPUT")"
 tmp_file="$(mktemp)"
 trap 'rm -f "$tmp_file"' EXIT
 ssh -o BatchMode=yes -o ConnectTimeout=10 "$TARGET" "bash -s" <<<"$remote_script" >"$tmp_file"
-# Preserve the canonical header and replace the prior snapshot atomically.
+# Replace only the generated snapshot; keep the curated SSOT untouched.
 install -m 0644 "$tmp_file" "$OUTPUT"
 printf 'Updated %s from %s\n' "$OUTPUT" "$TARGET"
